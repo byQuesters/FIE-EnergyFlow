@@ -20,6 +20,12 @@ This project integrates sensors (Photon boards) installed at strategic points wi
 
 ---
 
+## ⚙️ Prerequisites
+
+- **Node.js** (with npm or yarn) for the React application
+- **PostgreSQL** installed and running
+- **MQTT Broker** (e.g., Mosquitto) installed on a Linux server
+- **Photon devices** configured to transmit data
 
 ```bash
 npm run dev
