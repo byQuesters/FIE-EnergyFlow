@@ -5,6 +5,22 @@
 ## ENERGY FLOW
 
 
+---
+
+## 📌 Overview
+
+This project integrates sensors (Photon boards) installed at strategic points within the faculty's electrical network. These sensors measure various parameters, including voltage, current, and power. Data is transmitted via the MQTT protocol to a Linux server, stored in a PostgreSQL database, and made available in a user-friendly web application developed with React.
+
+### Key Components
+- **Photon**: Embedded devices for electrical variable measurement
+- **Linux Server**: Centralized platform for data processing
+- **MQTT**: Lightweight publish/subscribe protocol for IoT communication
+- **PostgreSQL**: Robust relational database system for data storage
+- **React**: Front-end framework for real-time data visualization
+
+---
+
+
 ```bash
 npm run dev
 ```
