@@ -79,7 +79,220 @@ The project architecture follows a **modular and scalable approach**, integratin
            |    Web Interface (React) |
            |     (Visualization)     |
            +-------------------------+
+⚙️ Prerequisites
+----------------
 
+-   **Node.js** (with npm or yarn) for the React application.
+    
+-   **PostgreSQL** installed and running.
+    
+-   **MQTT Broker** (e.g., Mosquitto) installed on a Linux server.
+    
+-   **Photon devices** configured to transmit data.
+    
+
+* * *
+
+🛠️ Installation and Setup
+--------------------------
+
+### 1\. Clone the Repository
+
+Start by cloning this repository to your local environment:
+
+bash
+
+CopiarEditar
+
+`git clone https://github.com/username/digital-twin-fie.git
+cd digital-twin-fie` 
+
+### 2\. Server Configuration
+
+#### Install MQTT Broker (Mosquitto) on Linux:
+
+bash
+
+CopiarEditar
+
+`sudo apt update
+sudo apt install mosquitto mosquitto-clients
+sudo systemctl enable mosquitto
+sudo systemctl start mosquitto` 
+
+#### Test the Broker:
+
+bash
+
+CopiarEditar
+
+`mosquitto_sub -h localhost -t "test/topic"` 
+
+### 3\. Database Setup
+
+#### Install PostgreSQL:
+
+bash
+
+CopiarEditar
+
+`sudo apt install postgresql postgresql-contrib` 
+
+#### Create Database and User:
+
+bash
+
+CopiarEditar
+
+`sudo -u postgres psql
+CREATE DATABASE energy_monitoring;
+CREATE USER twin_admin WITH ENCRYPTED PASSWORD 'password';
+GRANT ALL PRIVILEGES ON DATABASE energy_monitoring TO twin_admin;
+\q` 
+
+#### Run Database Migrations:
+
+Navigate to the database scripts directory:
+
+bash
+
+CopiarEditar
+
+`cd server/db
+psql -U twin_admin -d energy_monitoring -f create_tables.sql` 
+
+### 4\. Web Application Setup
+
+#### Navigate to the Web Directory:
+
+bash
+
+CopiarEditar
+
+`cd web` 
+
+#### Install Dependencies:
+
+bash
+
+CopiarEditar
+
+`npm install` 
+
+#### Run the Application:
+
+bash
+
+CopiarEditar
+
+`npm start` 
+
+Visit `http://localhost:3000` to access the dashboard.
+
+* * *
+
+💡 Usage Instructions
+---------------------
+
+1.  **Connect Photon Devices:**  
+    Ensure that all Photon sensors are properly configured and connected to the network.
+    
+2.  **Monitor Real-Time Data:**  
+    Use the **web dashboard** to view voltage, current, and power metrics in real-time.
+    
+3.  **Historical Data Analysis:**  
+    Generate reports and visualize past data trends using the **historical view**.
+    
+4.  **Anomaly Detection (Planned):**  
+    Configure alert thresholds for detecting irregular consumption patterns.
+    
+
+* * *
+
+📝 Troubleshooting
+------------------
+
+### Common Issues:
+
+-   **Web Application Not Starting:**  
+    Check if **Node.js** and **npm** are correctly installed.  
+    Run:
+    
+    bash
+    
+    CopiarEditar
+    
+    `node -v
+    npm -v` 
+    
+*   **Database Connection Error:**  
+    Verify that PostgreSQL is running and accessible:
+    
+    bash
+    
+    CopiarEditar
+    
+    `sudo systemctl status postgresql` 
+    
+-   **MQTT Communication Failure:**  
+    Make sure the Mosquitto service is active:
+    
+    bash
+    
+    CopiarEditar
+    
+    `sudo systemctl status mosquitto` 
+    
+
+* * *
+
+💪 Contributing
+---------------
+
+We welcome contributions from the community! To contribute:
+
+1.  Fork the repository.
+    
+2.  Create a new branch for your feature or bugfix.
+    
+3.  Commit your changes and push to your fork.
+    
+4.  Submit a pull request with a detailed description.
+    
+
+* * *
+
+🌱 Future Improvements
+----------------------
+
+-   Implement advanced data analytics and predictive models.
+    
+-   Integrate alert notifications via email or SMS.
+    
+-   Enhance the dashboard with more detailed metrics and data filtering options.
+    
+-   Add support for additional sensor types.
+    
+
+* * *
+
+📜 License
+----------
+
+This project is licensed under the **MIT License**. For more details, see the LICENSE file.
+
+* * *
+
+📝 Acknowledgements
+-------------------
+
+Special thanks to the Software Engineering team and all contributors who made this project possible.  
+Your efforts toward energy efficiency and sustainability make a difference! 💡🌍
+
+* * *
+
+**Maintained by:** Engineering and IoT Development Team  
+**Contact:** email@example.com
 
 ## COLORES:
 #ccdb94 - SUBTITULOS
