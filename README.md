@@ -15,3 +15,10 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## Learn More
 DOCUMENTACION DEL PROYECTO
+
+## COLORES:
+#ccdb94 - SUBTITULOS
+rgb(204 219 148 / 20%) - SUBFONDOS
+#7b8f35 - TITULOS Y BOTONES
+#a3bf42 - DETALLES
+#5f5ea3 - DETALLES OSCUROS
