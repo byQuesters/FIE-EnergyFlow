@@ -110,42 +110,49 @@ Test the Broker:
 
 mosquitto_sub -h localhost -t "test/topic"
 3. Database Setup
-Install PostgreSQL:
-
+- Install PostgreSQL:
+```bash
 sudo apt install postgresql postgresql-contrib
-Create Database and User:
-
+```
+- Create Database and User:
+```bash
 sudo -u postgres psql
 CREATE DATABASE energy_monitoring;
 CREATE USER twin_admin WITH ENCRYPTED PASSWORD 'password';
 GRANT ALL PRIVILEGES ON DATABASE energy_monitoring TO twin_admin;
 \q
-Run Database Migrations:
-
+```
+- Run Database Migrations:
+```bash
 cd server/db
 psql -U twin_admin -d energy_monitoring -f create_tables.sql
+```
 4. Web Application Setup
-Navigate to the Web Directory:
-
+- Navigate to the Web Directory:
+```bash
 cd web
-Install Dependencies:
-
+```
+- Install Dependencies:
+```bash
 npm install
-Run the Application:
+```
+- Run the Application:
+```bash
 
 npm start
-Visit http://localhost:3000 to access the dashboard.
+
+```
+
 
 ## 💡 Usage Instructions
 
-Connect Photon Devices:
-Ensure that all Photon sensors are properly configured and connected to the network.
-Monitor Real-Time Data:
-Use the web dashboard to view voltage, current, and power metrics in real-time.
-Historical Data Analysis:
-Generate reports and visualize past data trends using the historical view.
-Anomaly Detection (Planned):
-Configure alert thresholds for detecting irregular consumption patterns.
+- Connect Photon Devices: Ensure that all Photon sensors are properly configured and connected to the network.
+
+- Monitor Real-Time Data: Use the web dashboard to view voltage, current, and power metrics in real-time.
+
+- Historical Data Analysis: Generate reports and visualize past data trends using the historical view.
+
+- Anomaly Detection (Planned): Configure alert thresholds for detecting irregular consumption patterns.
 
 ## 📝 Troubleshooting
 
@@ -173,15 +180,17 @@ sudo systemctl status mosquitto
 We welcome contributions from the community! To contribute:
 
 Fork the repository.
-Create a new branch for your feature or bugfix.
-Commit your changes and push to your fork.
-Submit a pull request with a detailed description.
+
+- Create a new branch for your feature or bugfix.
+- Commit your changes and push to your fork.
+- Submit a pull request with a detailed description.
+  
 ## 🌱 Future Improvements
 
-Implement advanced data analytics and predictive models.
-Integrate alert notifications via email or SMS.
-Enhance the dashboard with more detailed metrics and data filtering options.
-Add support for additional sensor types.
+- Implement advanced data analytics and predictive models.
+- Integrate alert notifications via email or SMS.
+- Enhance the dashboard with more detailed metrics and data filtering options.
+- Add support for additional sensor types.
 
 ## 📜 License
 
