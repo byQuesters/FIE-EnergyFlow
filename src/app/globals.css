@@ -1,5 +1,9 @@
+
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------
+   Paleta claro / oscuro y fuentes base
+   ------------------------------------------------------------------ */
 :root {
   --background: #ffffff;
   --foreground: #171717;
