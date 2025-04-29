@@ -1,113 +1,144 @@
 .dashboard-container {
-    display: flex;
-    padding: 20px;
-    gap: 20px;
-    background: #f5f5f5;
-    min-height: 100vh;
-    font-family: sans-serif;
-  }
-  
-  .main-content {
-    flex: 3;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .header h2 {
-    margin-bottom: 10px;
-  }
-  
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-  }
-  
-  .card {
-    background: #fff;
-    padding: 15px;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    font-size: 14px;
-  }
-  
-  .card.green {
-    border-top: 4px solid #2ecc71;
-  }
-  
-  .top-charts {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-  }
-  
-  .chart-box {
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    flex: 1;
-    min-width: 300px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  }
-  
-  .full-width {
-    width: 100%;
-    margin-top: 10px;
-  }
-  
-  .bottom-chart {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .sidebar {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .energy-mode, .energy-storage {
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  }
-  
-  .mode-box {
-    background: #fca652;
-    padding: 15px;
-    border-radius: 10px;
-    color: #fff;
-    text-align: center;
-    margin-top: 10px;
-  }
-  
-  .mode-box button {
-    margin-top: 10px;
-    background: #fff;
-    color: #fca652;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-  }
-  
-  .donut-chart {
-    margin: 15px 0;
-    font-size: 18px;
-    text-align: center;
-    background: #f0f0f0;
-    padding: 20px;
-    border-radius: 50%;
-  }
-  
-  .legend {
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-    margin-top: 10px;
-  }
-  
+  display: flex;
+  padding: 20px;
+  gap: 20px;
+  background: #f5f5f5;
+  min-height: 100vh;
+  font-family: sans-serif;
+  color: #000; /* Set default text color to black */
+}
+
+.main-content {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header h2 {
+  margin-bottom: 10px;
+  color: #000; /* Ensure header is black */
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  font-size: 14px;
+  overflow: hidden; /* Ensures the border-radius clips the content */
+  display: flex;
+  flex-direction: column;
+  color: #000; /* Set text color to black */
+}
+
+.card.green {
+  border-top: 4px solid #2ecc71;
+}
+
+.card.green::before {
+  content: attr(data-title);
+  background: #2ecc71;
+  padding: 10px 15px;
+  color: white; /* White text for the green header */
+  font-size: 14px;
+}
+
+.card.green strong {
+  padding: 15px;
+  display: block;
+  font-size: 18px;
+  color: #000; /* Black text for the data */
+}
+
+.top-charts {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.chart-box {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  flex: 1;
+  min-width: 300px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  color: #000; /* Set text color to black */
+}
+
+.chart-box h4 {
+  color: #000; /* Ensure chart titles are black */
+  margin-bottom: 15px;
+}
+
+.full-width {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.bottom-chart {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.energy-mode, .energy-storage {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  color: #000; /* Set text color to black */
+}
+
+.energy-mode h3, .energy-storage h3 {
+  color: #000; /* Ensure sidebar headings are black */
+}
+
+.mode-box {
+  background: #fca652;
+  padding: 15px;
+  border-radius: 10px;
+  color: #fff;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.mode-box button {
+  margin-top: 10px;
+  background: #fff;
+  color: #fca652;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.donut-chart {
+  margin: 15px 0;
+  font-size: 18px;
+  text-align: center;
+  background: #f0f0f0;
+  padding: 20px;
+  border-radius: 50%;
+}
+
+.legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-top: 10px;
+  color: #000; /* Set legend text to black */
+}
