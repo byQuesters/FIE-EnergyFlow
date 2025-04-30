@@ -1,113 +1,206 @@
 .dashboard-container {
-    display: flex;
-    padding: 20px;
-    gap: 20px;
-    background: #f5f5f5;
-    min-height: 100vh;
-    font-family: sans-serif;
-  }
-  
-  .main-content {
-    flex: 3;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .header h2 {
-    margin-bottom: 10px;
-  }
-  
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-  }
-  
-  .card {
-    background: #fff;
-    padding: 15px;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    font-size: 14px;
-  }
-  
-  .card.green {
-    border-top: 4px solid #2ecc71;
-  }
-  
-  .top-charts {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-  }
-  
-  .chart-box {
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    flex: 1;
-    min-width: 300px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  }
-  
-  .full-width {
-    width: 100%;
-    margin-top: 10px;
-  }
-  
-  .bottom-chart {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .sidebar {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .energy-mode, .energy-storage {
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  }
-  
-  .mode-box {
-    background: #fca652;
-    padding: 15px;
-    border-radius: 10px;
-    color: #fff;
-    text-align: center;
-    margin-top: 10px;
-  }
-  
-  .mode-box button {
-    margin-top: 10px;
-    background: #fff;
-    color: #fca652;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-  }
-  
-  .donut-chart {
-    margin: 15px 0;
-    font-size: 18px;
-    text-align: center;
-    background: #f0f0f0;
-    padding: 20px;
-    border-radius: 50%;
-  }
-  
-  .legend {
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-    margin-top: 10px;
-  }
-  
+  display: flex;
+  padding: 20px;
+  gap: 20px;
+  background: var(--background);
+  min-height: 100vh;
+  font-family: sans-serif;
+  color: var(--foreground);
+  position: relative;
+}
+
+.main-content {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header h2 {
+  margin-bottom: 10px;
+  color: var(--foreground);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  font-size: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: var(--card-foreground);
+}
+
+.card strong {
+  font-size: 14px;
+  display: block;
+  padding: 20px;
+  text-align: center;
+}
+
+.card::before {
+  content: attr(data-title);
+  display: block;
+  padding: 10px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: bold;
+  text-align: center;
+}
+
+.green::before {
+  background: var(--primary);
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.chart-container {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 15px;
+  height: 300px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  color: var(--card-foreground);
+}
+
+.chart-container h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  text-align: center;
+  color: var(--foreground);
+}
+
+.widgets {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.widget {
+  flex: 1;
+  min-width: 200px;
+  background: var(--card);
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  color: var(--card-foreground);
+}
+
+.widget h3 {
+  margin-top: 0;
+  color: var(--foreground);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.status-indicator {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.active {
+  background: #4ade80;
+}
+
+.inactive {
+  background: #f87171;
+}
+
+.bottom-chart {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.energy-mode, .energy-storage {
+  background: var(--card);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  color: var(--card-foreground);
+}
+
+.energy-mode h3, .energy-storage h3 {
+  color: var(--foreground);
+}
+
+.mode-box {
+  background: #fca652;
+  padding: 15px;
+  border-radius: 10px;
+  color: #fff;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.mode-box button {
+  margin-top: 10px;
+  background: var(--background);
+  color: #fca652;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.donut-chart {
+  margin: 15px 0;
+  font-size: 18px;
+  text-align: center;
+  background: var(--muted);
+  padding: 20px;
+  border-radius: 50%;
+  color: var(--muted-foreground);
+}
+
+.legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-top: 10px;
+  color: var(--foreground);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 5px;
+}
+
+.legend-main {
+  background: var(--primary);
+}
+
+.legend-green {
+  background: var(--chart-1);
+}
