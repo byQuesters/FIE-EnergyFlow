@@ -279,7 +279,7 @@ const buildingData = {
   },
 };
 
-const COLORS = ['#00C49F', '#FF8042']
+// Removed duplicate declaration of COLORS
 
 import * as React from "react";
 import { Moon, Sun } from "lucide-react";
@@ -322,10 +322,16 @@ const donutData = [
 ]
 
 export default function Dashboard() {
-  const searchParams = useSearchParams()
-  const buildingCode = searchParams.get('building') || 'default'
-  const building = buildingData[buildingCode] || buildingData.default
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
+  if (!mounted) {
+    // Evitar renderizar contenido hasta que el cliente esté listo
+    return null;
+  }
   return (
      
     <div className="dashboard-container">
@@ -334,13 +340,13 @@ export default function Dashboard() {
       </div>
       <div className="main-content">
         <header className="header">
-          <h2>Dashboard {buildingCode !== 'default' ? `- Building ${buildingCode}` : ''}</h2>
+          <h2>Dashboard</h2>
           <div className="cards">
-            <div className="card green" data-title="Overall System Efficiency"><strong>{building.stats.efficiency}</strong></div>
-            <div className="card green" data-title="Renewable Energy Utilization"><strong>{building.stats.renewable}</strong></div>
-            <div className="card green" data-title="Carbon Emission Reduction"><strong>{building.stats.emissionReduction}</strong></div>
-            <div className="card green" data-title="Energy Cost Savings"><strong>{building.stats.costSavings}</strong></div>
-            <div className="card green" data-title="Overall System Carbon Footprint"><strong>{building.stats.carbonFootprint}</strong></div>
+            <div className="card green" data-title="Overall System Efficiency"><strong>70%</strong></div>
+            <div className="card green" data-title="Renewable Energy Utilization"><strong>70%</strong></div>
+            <div className="card green" data-title="Carbon Emission Reduction"><strong>40%</strong></div>
+            <div className="card green" data-title="Energy Cost Savings"><strong>$1,250 / mes</strong></div>
+            <div className="card green" data-title="Overall System Carbon Footprint"><strong>150 tCO₂/año</strong></div>
           </div>
         </header>
 
@@ -348,7 +354,7 @@ export default function Dashboard() {
           <div className="chart-box">
             <h4>Energy Usage (kWh/mes)</h4>
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={building.barData}>
+              <BarChart data={barData}>
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
@@ -362,7 +368,7 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
-                  data={building.pieData}
+                  data={pieData}
                   cx="50%"
                   cy="50%"
                   innerRadius={50}
@@ -370,7 +376,7 @@ export default function Dashboard() {
                   dataKey="value"
                   label
                 >
-                  {building.pieData.map((entry, index) => (
+                  {pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -384,7 +390,7 @@ export default function Dashboard() {
           <div className="chart-box full-width">
             <h4>Carbon Footprint CO₂ (kg/mes)</h4>
             <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={building.lineData}>
+              <LineChart data={lineData}>
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
@@ -432,4 +438,31 @@ export default function Dashboard() {
       </aside>
     </div>
   )
+}
+
+function ModeToggle() {
+  const { setTheme } = useTheme();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="icon">
+          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <span className="sr-only">Toggle theme</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => setTheme("light")}>
+          Claro
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("dark")}>
+          Oscuro
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("system")}>
+          Sistema
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
