@@ -281,6 +281,41 @@ const buildingData = {
 
 const COLORS = ['#00C49F', '#FF8042']
 
+import * as React from "react";
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const barData = [
+  { month: 'Jan', kWh: 400 },
+  { month: 'Feb', kWh: 300 },
+  { month: 'Mar', kWh: 500 },
+  { month: 'Apr', kWh: 350 },
+  { month: 'May', kWh: 600 },
+]
+
+const pieData = [
+  { name: 'Peak Hours', value: 65 },
+  { name: 'Off Hours', value: 35 },
+]
+
+const COLORS = ['#00C49F', '#FF8042']
+
+const lineData = [
+  { month: 'Jan', CO2: 120 },
+  { month: 'Feb', CO2: 110 },
+  { month: 'Mar', CO2: 130 },
+  { month: 'Apr', CO2: 100 },
+  { month: 'May', CO2: 95 },
+]
+
 const donutData = [
   { name: 'Main Power', value: 50 },
   { name: 'Green Energy', value: 25 },
@@ -292,7 +327,11 @@ export default function Dashboard() {
   const building = buildingData[buildingCode] || buildingData.default
 
   return (
+     
     <div className="dashboard-container">
+      <div className="absolute top-4 right-4">
+        <ModeToggle />
+      </div>
       <div className="main-content">
         <header className="header">
           <h2>Dashboard {buildingCode !== 'default' ? `- Building ${buildingCode}` : ''}</h2>

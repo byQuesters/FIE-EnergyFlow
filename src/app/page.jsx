@@ -1,5 +1,4 @@
 "use client";
-
 import { useRouter } from 'next/navigation';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -10,6 +9,18 @@ import {
  * Mapa pastel de la facultad (Gemelo Digital).
  * No requiere tailwind.config.ts; usamos clases arbitrarias de Tailwind v4.
  */
+import * as React from "react";
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 export default function Home() {
   const router = useRouter();
 
@@ -19,10 +30,27 @@ export default function Home() {
     router.push(`/dashboard?building=${buildingCode}`);
   };
 
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  // Asegurarse de que el componente esté montado en el cliente
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    // Evitar renderizar contenido hasta que el cliente esté listo
+    return null;
+  }
+
   return (
+    
     <section className="flex min-h-screen items-center justify-center p-6">
-      {/* CONTENEDOR PRINCIPAL DEL MAPA */}
+      <div className="absolute top-4 right-4">
+          <ModeToggle />
+        </div>
       <div className="relative h-[750px] w-[1200px] overflow-hidden rounded-3xl border border-green-200 bg-[#ECF8E6] shadow-xl">
+      
         {/* Carretera */}
         <div className="absolute right-0 top-0 h-full w-28 bg-[#404040]">
           <div className="absolute inset-0 flex flex-col justify-between py-4">
@@ -78,12 +106,40 @@ export default function Home() {
         {treePositions.map((p) => (
           <Tree key={p} pos={p} />
         ))}
+      
       </div>
     </section>
   );
 }
 
 /* ---------- COMPONENTES ---------- */
+
+function ModeToggle() {
+  const { setTheme } = useTheme();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="icon">
+          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <span className="sr-only">Toggle theme</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => setTheme("light")}>
+          Claro
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("dark")}>
+          Obscuro
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("system")}>
+          Sistema
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 function Building({ label, pos, size = "w-32 h-20", octagon = false, onClick }) {
   //Cambio de color a edificios que no son de FIE
