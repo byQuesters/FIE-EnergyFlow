@@ -346,7 +346,7 @@ export default function Dashboard() {
       </div>
       <div className="main-content">
         <header className="header">
-          <h2>Dashboard{buildingCode !== 'default' ? ` - Building ${buildingCode}` : ''}</h2>
+          <h2>Dashboard{buildingCode !== 'default' ? ` - Edificio ${buildingCode}` : ''}</h2>
           <div className="cards">
             <div className="card green" data-title="Overall System Efficiency"><strong>{building.stats.efficiency}</strong></div>
             <div className="card green" data-title="Renewable Energy Utilization"><strong>{building.stats.renewable}</strong></div>
@@ -358,7 +358,7 @@ export default function Dashboard() {
 
         <div className="top-charts">
           <div className="chart-box">
-            <h4>Energy Usage (kWh/mes)</h4>
+            <h4>Uso de energía (kWh/mes)</h4>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={building.barData}>
                 <XAxis dataKey="month" />

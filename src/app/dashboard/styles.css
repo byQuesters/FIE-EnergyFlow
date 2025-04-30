@@ -204,3 +204,51 @@
 .legend-green {
   background: var(--chart-1);
 }
+
+/*Estilos cambio de temas*/
+:root {
+  --card-green-top: #2ecc71;
+  --card-green-top-dark: #27ae60;
+  --card-bg: #ffffff;
+  --card-bg-dark: #1e1e1e;
+  --card-text: #000000;
+  --card-text-dark: #ffffff;
+}
+
+.card {
+  background: var(--card-bg);
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  font-size: 14px;
+  color: var(--card-text);
+  transition: all 0.3s ease;
+}
+
+.card.green {
+  border-top: 4px solid var(--card-green-top);
+}
+
+.dark .card {
+  background: var(--card-bg-dark);
+  color: var(--card-text-dark);
+}
+
+.dark .card.green {
+  border-top-color: var(--card-green-top-dark);
+}
+
+.card.green::before {
+  content: attr(data-title);
+  background: var(--card-green-top);
+  padding: 10px 15px;
+  color: white;
+  font-size: 14px;
+  display: block;
+  margin: -15px -15px 15px -15px;
+  border-radius: 8px 8px 0 0;
+}
+
+.dark .card.green::before {
+  background: var(--card-green-top-dark);
+}
