@@ -40,11 +40,11 @@ export default function Dashboard() {
         <header className="header">
           <h2>Dashboard</h2>
           <div className="cards">
-            <div className="card green">Overall System Efficiency<br /><strong>70%</strong></div>
-            <div className="card green">Renewable Energy Utilization<br /><strong>70%</strong></div>
-            <div className="card green">Carbon Emission Reduction<br /><strong>40%</strong></div>
-            <div className="card green">Energy Cost Savings<br /><strong>$1,250 / mes</strong></div>
-            <div className="card green">Overall System Carbon Footprint<br /><strong>150 tCO₂/año</strong></div>
+            <div className="card green" data-title="Overall System Efficiency"><strong>70%</strong></div>
+            <div className="card green" data-title="Renewable Energy Utilization"><strong>70%</strong></div>
+            <div className="card green" data-title="Carbon Emission Reduction"><strong>40%</strong></div>
+            <div className="card green" data-title="Energy Cost Savings"><strong>$1,250 / mes</strong></div>
+            <div className="card green" data-title="Overall System Carbon Footprint"><strong>150 tCO₂/año</strong></div>
           </div>
         </header>
 
