@@ -1,6 +1,10 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, LineChart, Line,
+} from 'recharts'
 
 /**
  * Mapa pastel de la facultad (Gemelo Digital).
