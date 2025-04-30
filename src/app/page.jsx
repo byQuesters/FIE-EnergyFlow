@@ -1,11 +1,20 @@
-
 "use client";
+
+import { useRouter } from 'next/navigation';
 
 /**
  * Mapa pastel de la facultad (Gemelo Digital).
  * No requiere tailwind.config.ts; usamos clases arbitrarias de Tailwind v4.
  */
 export default function Home() {
+  const router = useRouter();
+
+  const handleBuildingClick = (buildingCode) => {
+    //router.push('/dashboard');
+    //Para pasar el código del edificio al dashboard: 
+    router.push(`/dashboard?building=${buildingCode}`);
+  };
+
   return (
     <section className="flex min-h-screen items-center justify-center p-6">
       {/* CONTENEDOR PRINCIPAL DEL MAPA */}
@@ -26,19 +35,21 @@ export default function Home() {
         <div className="absolute left-1/2 top-0 h-full w-16 -translate-x-1/2 bg-gray-300" />
 
         {/* ------------------ EDIFICIOS ------------------ */}
-        <Building label="CE" pos="left-[3%] top-[4%]" />
-        <Building label="D" pos="left-[38%] top-[4%]" />
-        <Building label="FCAM" pos="right-[13%] top-[4%]" size="w-40 h-28" />
-        <Building label="FCAM" pos="right-[4%] top-[32%]" size="w-32 h-16" />
-        <Building label="LSE" pos="left-[12%] top-[33%]" />
-        <Building label="LM" pos="left-[12%] top-[55%]" />
-        <Building label="LEM" pos="left-[27%] top-[23%]" size="w-36 h-16" />
-        <Building label="LE" pos="left-[41%] top-[23%]" size="w-36 h-16" />
-        <Building label="LIC" pos="left-[55%] top-[23%]" size="w-32 h-16" />
-        <Building label="LIOT" pos="left-[68%] top-[23%]" size="w-40 h-16" />
+        <Building label="CE" pos="left-[3%] top-[4%]"/>
+        <Building label="D" pos="left-[38%] top-[4%]" onClick={() => handleBuildingClick('D')} />
+        <Building label="FCAM" pos="right-[13%] top-[4%]" size="w-40 h-28"/>
+        <Building label="FCAM" pos="right-[4%] top-[32%]" size="w-32 h-16"/>
+        <Building label="LSE" pos="left-[12%] top-[33%]" onClick={() => handleBuildingClick('LSE')} />
+        <Building label="LM" pos="left-[12%] top-[55%]" onClick={() => handleBuildingClick('LM')} />
+        <Building label="LEM" pos="left-[27%] top-[23%]" size="w-36 h-16" onClick={() => handleBuildingClick('LEM')} />
+        <Building label="LE" pos="left-[41%] top-[23%]" size="w-36 h-16" onClick={() => handleBuildingClick('LE')} />
+        <Building label="LIC" pos="left-[55%] top-[23%]" size="w-32 h-16" onClick={() => handleBuildingClick('LIC')} />
+        <Building label="LIOT" pos="left-[68%] top-[23%]" size="w-40 h-16" onClick={() => handleBuildingClick('LIOT')} />
 
         {/* SE (cuadro rojo) */}
-        <div className="absolute left-[39%] top-[39%] flex h-16 w-16 items-center justify-center rounded-md border-4 border-red-400 text-sm font-semibold text-red-500">
+        <div 
+          className="absolute left-[39%] top-[39%] flex h-16 w-16 items-center justify-center rounded-md border-4 border-red-400 text-sm font-semibold text-red-500"
+        >
           SE
         </div>
 
@@ -48,11 +59,12 @@ export default function Home() {
           pos="left-[42%] top-[48%]"
           size="w-48 h-48"
           octagon
+          onClick={() => handleBuildingClick('A1')}
         />
 
         {/* A2 y A3 */}
-        <Building label="A2" pos="right-[18%] top-[48%]" />
-        <Building label="A3" pos="right-[18%] top-[63%]" />
+        <Building label="A2" pos="right-[18%] top-[48%]" onClick={() => handleBuildingClick('A2')} />
+        <Building label="A3" pos="right-[18%] top-[63%]" onClick={() => handleBuildingClick('A3')} />
 
         {/* ------------------ EXTRAS ------------------ */}
         <Parking pos="left-[36%] bottom-[6%]" />
@@ -69,12 +81,13 @@ export default function Home() {
 
 /* ---------- COMPONENTES ---------- */
 
-function Building({ label, pos, size = "w-32 h-20", octagon = false }) {
+function Building({ label, pos, size = "w-32 h-20", octagon = false, onClick }) {
   return (
     <div
       className={`absolute ${pos} ${size} ${
         octagon ? "clip-octagon" : "rounded-md"
-      } bg-[#A9B8FF] shadow flex items-center justify-center`}
+      } bg-[#A9B8FF] shadow flex items-center justify-center cursor-pointer hover:bg-[#8FA0EB] transition-colors`}
+      onClick={onClick}
     >
       <span className="text-white font-semibold">{label}</span>
       <span className="absolute -top-2 left-1/2 -translate-x-1/2 h-4 w-4 rounded-full bg-[#FF6B6B] shadow" />
