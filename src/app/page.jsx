@@ -82,12 +82,22 @@ export default function Home() {
 /* ---------- COMPONENTES ---------- */
 
 function Building({ label, pos, size = "w-32 h-20", octagon = false, onClick }) {
+  //Cambio de color a edificios que no son de FIE
+  let buildingColor = "#A9B8FF"; //Color por defecto (azul claro)
+  
+  if (label === "CE") {
+    buildingColor = "#FFA07A"; //Color para CE
+  } else if (label === "FCAM") {
+    buildingColor = "#FFD700"; //Color para FCAM
+  }
+
   return (
     <div
       className={`absolute ${pos} ${size} ${
         octagon ? "clip-octagon" : "rounded-md"
-      } bg-[#A9B8FF] shadow flex items-center justify-center cursor-pointer hover:bg-[#8FA0EB] transition-colors`}
+      } shadow flex items-center justify-center cursor-pointer hover:opacity-90 transition-colors`}
       onClick={onClick}
+      style={{ backgroundColor: buildingColor }}
     >
       <span className="text-white font-semibold">{label}</span>
       <span className="absolute -top-2 left-1/2 -translate-x-1/2 h-4 w-4 rounded-full bg-[#FF6B6B] shadow" />
