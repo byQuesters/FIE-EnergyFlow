@@ -173,4 +173,10 @@ button:focus {
     text-shadow: 0px 0px 1vh #000000;
   }
   
-  
+  /* styles.css */
+.dashboard-header {
+  position: sticky; /* o fixed si quieres que quede siempre visible */
+  top: 0;
+  z-index: 50;
+  background: white;
+}
