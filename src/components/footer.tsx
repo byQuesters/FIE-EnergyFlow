@@ -17,8 +17,9 @@ export function Footer() {
             <img 
               src="/UCOL_Icon.png" 
               alt="Logo" 
-              className="h-8 w-8 opacity-80"
+              className="w-[100%] max-w-[20%] h-auto opacity-80 left-0"
             />
+
             <h3 className="font-bold text-lg">ENERGY FLOW</h3>
           </div>
           <p className="mt-2 text-sm text-muted-foreground max-w-md">
