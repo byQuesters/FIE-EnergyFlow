@@ -9,21 +9,29 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setIsLoading(true) // Activa el estado de carga
+    
+    try {
+      const res = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      })
 
-    const res = await signIn('credentials', {
-      redirect: false,
-      email,
-      password,
-    })
-
-    if (res.ok) {
-      router.push('/dashboard')
-    } else {
-      setError('Credenciales inválidas')
+      if (res?.ok) {
+        router.push('/dashboard')
+      } else {
+        setError(res?.error || 'Credenciales inválidas')
+      }
+    } catch (err) {
+      setError('Error de conexión')
+    } finally {
+      setIsLoading(false) // Desactiva el estado de carga
     }
   }
 
@@ -48,7 +56,12 @@ export default function Login() {
             placeholder="Contraseña" 
             required
           />
-          <button type="submit">Iniciar Sesión</button>
+          <button 
+            type="submit" 
+            disabled={isLoading}
+          >
+            {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+          </button>
         </form>
         <div className="auth-links">
           <a href="../register">¿No tienes cuenta? Regístrate</a>
