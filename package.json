@@ -13,6 +13,7 @@
     "@prisma/client": "^6.8.2",
     "@radix-ui/react-dropdown-menu": "^2.1.12",
     "@radix-ui/react-slot": "^1.2.0",
+<<<<<<< HEAD
     "@supabase/supabase-js": "^2.49.4",
     "animate.css": "^4.1.1",
     "bcryptjs": "^3.0.2",
@@ -20,11 +21,18 @@
     "lucide-react": "^0.503.0",
     "next": "^15.3.1",
     "next-auth": "^4.24.11",
+=======
+    "animate.css": "^4.1.1",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^0.503.0",
+    "next": "^15.3.1",
+>>>>>>> 77b8d950f930e8b81a26648dd8eef258627bc2fa
     "next-themes": "^0.4.6",
     "particle-api-js": "^9.1.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.3",
+    "sonner": "^2.0.3",
     "tailwind-merge": "^3.2.0",
     "tailwindcss-animate": "^1.0.7",
     "tw-animate-css": "^1.2.8"
