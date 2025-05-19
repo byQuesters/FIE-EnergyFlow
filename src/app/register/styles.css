@@ -1,0 +1,175 @@
+/* 
+COLORES:
+#ccdb94 - SUBTITULOS
+rgb(204 219 148 / 20%) - SUBFONDOS
+#7b8f35 - TITULOS Y BOTONES
+#a3bf42 - DETALLES
+#5f5ea3 - DETALLES OSCUROS
+*/
+
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
+}
+
+.loginview {
+  display: flex;
+  justify-content: center; /* Centra horizontalmente */
+  align-items: center; /* Centra verticalmente */
+  width: 100%;
+  height: 100vh; /* Ocupa toda la altura de la pantalla */
+  background-color: #ffffff;
+}
+
+.logincard {
+  width: 70%; /* Ancho del card */
+  max-width: 500px; /* Ancho máximo para evitar que se vea demasiado grande en pantallas grandes */
+  background-color: rgb(204 219 148 / 20%);
+  border-radius: 4vh;
+  border: .2vh solid #000000;
+  box-shadow: 0px 0px 5vh 0px #000000;
+  padding: 3vh;
+  text-align: center; /* Centra el contenido interno */
+}
+
+img {
+  width: 60%;
+  height: auto;
+  filter: drop-shadow(0px 0px 1vh #e0ff6e);
+  margin: auto;
+  margin-bottom: 3vh;
+  opacity: .5;
+}
+
+.logoucol {
+  width: 60%;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.logincard h1 {
+  font-size: 5vh;
+  font-weight: bold;
+  color: #ccdb94;
+  margin: 0;
+  margin-top: 0vh;
+  margin-bottom: -2vh;
+}
+
+.logincard form {
+  margin-top: 3vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #000000;
+}
+
+
+input {
+  border: .3vh solid #a3bf42;
+  padding: 2vh;
+  margin: 1vh;
+  border-radius: 1.5vh;
+  transition: border-color 300ms, color 300ms;
+  width: 80%; /* Ancho del input */
+}
+
+input::placeholder {
+  color: #a3bf42;
+  font-size: 2vh;
+  font-weight: bold;
+  transition: color 300ms;
+}
+
+input:focus::placeholder {
+  color: #5f5ea3;
+  transition: color 500ms;
+}
+
+button {
+  background-color: #ccdb94;
+  border: .3vh solid #a3bf42;
+  font-size: 2.5vh;
+  font-weight: bold;
+  cursor: pointer;
+  color: #7b8f35;
+  padding: 2vh;
+  margin: 1vh;
+  border-radius: 1.5vh;
+  transition: 300ms;
+  width: 80%; /* Ancho del botón */
+}
+
+button:hover {
+  background-color: #a3bf42;
+  border: .3vh solid #5f5ea3;
+  box-shadow: 0px 0px 1vh 0px #000000;
+  transition: 500ms;
+  color: #5f5ea3;
+}
+
+input:focus {
+  border: .3vh solid #5f5ea3;
+  color: #5f5ea3;
+  outline: none;
+  transition: 500ms;
+}
+
+button:focus {
+  border: .3vh solid #5f5ea3;
+  color: #5f5ea3;
+  outline: none;
+  transition: 500ms;
+}
+
+
+button {
+  background-color: #ccdb94;
+  border: .3vh solid #a3bf42;
+  font-size: 2.5vh;
+  font-weight: bold;
+  cursor: pointer;
+  color: #7b8f35;
+  padding: 1vh;
+  margin: 1vh;
+  border-radius: 1.5vh;
+  transition: 300ms;
+  width: 80%; /* Ancho del botón */
+}
+
+button:hover {
+  background-color: #a3bf42;
+  border: .3vh solid #5f5ea3;
+  box-shadow: 0px 0px 1vh 0px #000000;
+  transition: 500ms;
+  color: #5f5ea3;
+}
+
+.error-message {
+  color: red;
+  margin: 1rem 0;
+}
+
+.auth-links {
+  font-size: 1.2rem;
+  margin-top: 1rem;
+}
+
+.auth-links a {
+  display: block;
+  margin: 0.5rem 0;
+  color: #7b8f35;
+}
+
+.auth-links a:hover {
+  display: block;
+  margin: 0.5rem 0;
+  color: #403e73;
+  transition: 500ms;
+  text-shadow: 0px 0px 1vh #000000;
+}
+

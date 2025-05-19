@@ -204,3 +204,23 @@
 .legend-green {
   background: var(--chart-1);
 }
+
+.logout-section {
+  position: absolute;
+  top: 20px;
+  right: 80px; /* Ajusta según necesidad */
+  display: flex;
+  align-items: center;
+  z-index: 10;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.875rem;
+}
+
+.logout-button {
+  margin-left: 10px;
+}

@@ -45,12 +45,19 @@ img {
     opacity: .5;
 }
 
+.logoucol {
+    width: 60%;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+  }
+
 .logincard h1 {
     font-size: 5vh;
     font-weight: bold;
     color: #ccdb94;
     margin: 0;
-    margin-top: -2vh;
+    margin-top: 0vh;
+    margin-bottom: -2vh;
 }
 
 .logincard form {
@@ -118,3 +125,52 @@ button:focus {
     outline: none;
     transition: 500ms;
 }
+
+  
+  button {
+    background-color: #ccdb94;
+    border: .3vh solid #a3bf42;
+    font-size: 2.5vh;
+    font-weight: bold;
+    cursor: pointer;
+    color: #7b8f35;
+    padding: 1vh;
+    margin: 1vh;
+    border-radius: 1.5vh;
+    transition: 300ms;
+    width: 80%; /* Ancho del botón */
+  }
+  
+  button:hover {
+    background-color: #a3bf42;
+    border: .3vh solid #5f5ea3;
+    box-shadow: 0px 0px 1vh 0px #000000;
+    transition: 500ms;
+    color: #5f5ea3;
+  }
+  
+  .error-message {
+    color: red;
+    margin: 1rem 0;
+  }
+  
+  .auth-links {
+    font-size: 1.2rem;
+    margin-top: 1rem;
+  }
+  
+  .auth-links a {
+    display: block;
+    margin: 0.5rem 0;
+    color: #7b8f35;
+  }
+
+  .auth-links a:hover {
+    display: block;
+    margin: 0.5rem 0;
+    color: #403e73;
+    transition: 500ms;
+    text-shadow: 0px 0px 1vh #000000;
+  }
+  
+  
