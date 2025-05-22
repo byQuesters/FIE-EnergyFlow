@@ -12,6 +12,9 @@ export async function middleware(req) {
   if (pathname === '/login' && token) {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
-
   return NextResponse.next()
+}
+
+export const config = {
+  matcher: ['/dashboard/:path*', '/login'],
 }

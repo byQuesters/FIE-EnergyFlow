@@ -20,10 +20,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useSession } from "next-auth/react";
 
 export default function Home() {
   const router = useRouter();
+const { data: session, status } = useSession();
 
+React.useEffect(() => {
+  if (status === "loading") return; // espera a que cargue
+  if (!session) router.push("/login"); // redirige si no hay sesión
+  }, [status, session]);
   const handleBuildingClick = (buildingCode) => {
     //router.push('/dashboard');
     //Para pasar el código del edificio al dashboard: 

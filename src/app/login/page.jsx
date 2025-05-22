@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import React, { useState, useEffect } from 'react'
+import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import styles from './styles.css'
 
@@ -10,6 +10,13 @@ export default function Login() {
   const [error, setError] = useState('')
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+
+  const { data: session, status } = useSession();
+
+  React.useEffect(() => {
+    if (status === 'loading') return;
+    if (session) router.push('/'); // si ya hay sesión, ir al mapa
+  }, [status, session]);
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -24,7 +31,7 @@ export default function Login() {
       })
 
       if (res?.ok) {
-        router.push('/dashboard')
+        router.push('/')
       } else {
         setError(res?.error || 'Credenciales inválidas')
       }
