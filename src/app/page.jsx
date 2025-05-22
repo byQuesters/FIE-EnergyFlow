@@ -55,7 +55,7 @@ React.useEffect(() => {
       <div className="absolute top-4 right-4">
           <ModeToggle />
         </div>
-      <div className="relative h-[750px] w-[1200px] overflow-hidden rounded-3xl border border-green-200 bg-[#ECF8E6] shadow-xl">
+      <div className="relative h-[90vh] w-[1200px] overflow-hidden rounded-3xl border border-green-200 bg-[#ECF8E6] shadow-xl">
       
         {/* Carretera */}
         <div className="absolute right-0 top-0 h-full w-28 bg-[#404040]">
@@ -176,9 +176,9 @@ function Parking({ pos }) {
     <div
       className={`absolute ${pos} grid h-24 w-60 grid-cols-4 gap-2 rounded-md bg-[#59616F] p-2`}
     >
-      {["GRAY", "GRAY", "GRAY", "GRAY"].map((c) => (
+      {["GRAY", "GRAY", "GRAY", "GRAY"].map((c, i) => (
         <div
-          key={c}
+          key={`parking-${i}`}
           className="h-full w-full rounded-sm shadow-inner"
           style={{ backgroundColor: c }}
         />
