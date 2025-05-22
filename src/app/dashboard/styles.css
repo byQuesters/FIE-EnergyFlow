@@ -14,7 +14,18 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  margin-top: 5vh;
+  border: .4vh solid black;
+  padding: 2vh;
+  border-radius: 2vh;
+  height: 90vh;
+  max-height: 90vh;
+  overflow-y: auto;  
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f1f1f10d;
+  box-shadow: 0 0 3vh rgb(0, 0, 0);
 }
+
 
 .header h2 {
   margin-bottom: 10px;
@@ -133,6 +144,16 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  margin-top: 5vh;
+  border: .4vh solid black;
+  padding: 2vh;
+  border-radius: 2vh;
+  height: 90vh;
+  max-height: 90vh;
+  overflow-y: auto;  
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f1f1f10d;
+  box-shadow: 0 0 2vh rgb(0, 0, 0);
 }
 
 .energy-mode, .energy-storage {
@@ -223,4 +244,12 @@
 
 .logout-button {
   margin-left: 10px;
+}
+
+img {
+    filter: drop-shadow(0 0 1vh #e0ff6e);
+    opacity: .5;
+    width: 60%;
+    height: auto;
+    margin: auto auto 3vh;
 }
