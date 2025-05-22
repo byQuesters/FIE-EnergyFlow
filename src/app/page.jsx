@@ -176,7 +176,7 @@ function Parking({ pos }) {
     <div
       className={`absolute ${pos} grid h-24 w-60 grid-cols-4 gap-2 rounded-md bg-[#59616F] p-2`}
     >
-      {["#FEB2B2", "#FBD38D", "#90CDF4", "#C6F6D5"].map((c) => (
+      {["GRAY", "GRAY", "GRAY", "GRAY"].map((c) => (
         <div
           key={c}
           className="h-full w-full rounded-sm shadow-inner"
