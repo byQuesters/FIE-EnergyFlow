@@ -248,8 +248,5 @@
 
 img {
     filter: drop-shadow(0 0 1vh #e0ff6e);
-    opacity: .5;
-    width: 60%;
-    height: auto;
-    margin: auto auto 3vh;
+    width: auto;
 }
