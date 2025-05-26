@@ -14,19 +14,19 @@ export default function Header() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <header className="w-full px-6 py-4 flex items-center justify-between bg-background text-foreground shadow">
+    <header className="w-full px-6 py-4 flex items-center justify-between bg-background text-foreground shadow border-b-[.3vh] border-[#ccdb94] dark:border-gray-700">
       <div className="flex items-center gap-3">
-        <img src="/UCOL_Icon.png" alt="Logo UCOL" className="h-10 w-10" />
-        <span className="font-bold text-xl">ENERGY FLOW</span>
+        <img src="/UCOL_Icon.png" alt="Logo UCOL" className="h-10 w-auto" />
+        <span className="font-bold text-[4vh] text-[#7b8f35]">ENERGY FLOW</span>
       </div>
-      <nav className="flex items-center gap-6">
-        <Link href="/" className="hover:underline underline-offset-4">
+      <nav className="flex items-center gap-10">
+        <Link href="/" className="hover:underline underline-offset-4 text-[2.3vh] text-[#7b8f35]">
           Inicio
         </Link>
-        <Link href="/dashboard" className="hover:underline underline-offset-4">
+        <Link href="/dashboard" className="hover:underline underline-offset-4 text-[2.3vh] text-[#7b8f35]">
           Dashboard
         </Link>
-        <Link href="/about" className="hover:underline underline-offset-4">
+        <Link href="/about" className="hover:underline underline-offset-4 text-[2.3vh] text-[#7b8f35]">
           Acerca de
         </Link>
         <ModeToggle />

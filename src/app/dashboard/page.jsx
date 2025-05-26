@@ -1,20 +1,11 @@
 'use client'
-import './styles.css'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line,
 } from 'recharts'
 
 import * as React from "react";
-import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 export default function Dashboard() {
   const { theme, setTheme } = useTheme();
@@ -76,7 +67,6 @@ export default function Dashboard() {
 
   if (!mounted) return null;
 
-  // Dinamizar datos usando datos reales
   const barData = [
     { month: 'Fase A', kWh: realTimeData.kWhA },
     { month: 'Fase B', kWh: realTimeData.kWhB },
@@ -91,7 +81,7 @@ export default function Dashboard() {
 
   const lineData = historicalData.slice(0, 5).reverse().map((entry, index) => ({
     month: `#${index + 1}`,
-    CO2: Math.round((entry.kWhA + entry.kWhB + entry.kWhC) * 0.233), // ejemplo: 0.233 kgCO2/kWh
+    CO2: Math.round((entry.kWhA + entry.kWhB + entry.kWhC) * 0.233),
   }));
 
   const donutData = [
@@ -99,110 +89,138 @@ export default function Dashboard() {
     { name: 'Green Energy', value: 25 },
   ];
 
-  const COLORS = ['#00C49F', '#FF8042', '#8884d8'];
-
+  const COLORS = ['#a3bf42', '#ffbb76', '#b699ff'];
   return (
-    <div className="dashboard-container">
-      <div className="absolute top-4 right-4">
-      </div>
-      <div className="main-content">
-        <header className="header">
-          <h2>Dashboard</h2>
-          <div className="cards">
-            <div className="card green" data-title="Corriente RMS Fase A"><strong>{realTimeData.I_RMSA.toFixed(2)} A</strong></div>
-            <div className="card green" data-title="Voltaje RMS Fase A"><strong>{realTimeData.V_RMSA.toFixed(2)} V</strong></div>
-            <div className="card green" data-title="Potencia Promedio A"><strong>{realTimeData.PPROM_A.toFixed(2)} W</strong></div>
-            <div className="card green" data-title="kWh Total"><strong>{(realTimeData.kWhA + realTimeData.kWhB + realTimeData.kWhC).toFixed(2)} kWh</strong></div>
-            <div className="card green" data-title="Última actualización"><strong>{new Date(realTimeData.timestamp).toLocaleTimeString()}</strong></div>
-          </div>
-        </header>
-
-        <div className="top-charts">
-          <div className="chart-box">
-            <h4>Energía por Fase (kWh)</h4>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={barData}>
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="kWh" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="chart-box">
-            <h4>Potencia Promedio</h4>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  dataKey="value"
-                  label
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+    <div className="flex flex-col lg:flex-row bg-white dark:bg-zinc-900 text-black dark:text-white overflow-hidden h-[90vh] text-foreground shadow border-b-[.3vh] border-[#ccdb94] dark:border-gray-700">
+      {/* Sidebar - Altura fija de 85vh y scrollable */}
+      <aside className="w-full lg:w-[20vw] bg-zinc-100 dark:bg-zinc-800 p-4 flex flex-col gap-4 h-[100%] overflow-y-auto">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold">⚡ Energy Mode</h3>
+          <div className="bg-white dark:bg-zinc-700 p-4 rounded-xl shadow h-[20vh] border-2 border-dashed border-gray-400 dark:border-gray-400 flex flex-col justify-center items-center">
+            <h4 className="font-semibold text-center">Best Power Efficiency</h4>
+            <p className="text-sm text-center">This mode will help to extend the power storage efficiency.</p>
+            <button className="mt-2 px-3 py-1 rounded-md bg-green-500 text-white">Change Plan</button>
           </div>
         </div>
 
-        <div className="bottom-chart">
-          <div className="chart-box full-width">
-            <h4>Huella de Carbono Estimada (CO₂ kg)</h4>
-            <ResponsiveContainer width="100%" height={250}>
+        <div className="text-center">
+          <h3 className="text-lg font-semibold">🔋 Energy Storage</h3>
+          <div className="bg-white dark:bg-zinc-700 p-4 rounded-xl shadow h-[auto] border-2 border-dashed border-gray-400 dark:border-gray-400 flex flex-col justify-center items-center">
+            <div className="flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={donutData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    dataKey="value"
+                  >
+                    {donutData.map((entry, index) => (
+                      <Cell key={`donut-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-2 text-sm text-center">
+              <span>Main Power: 75%</span><br />
+              <span>Green Energy: 25%</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content - Altura fija de 85vh y scrollable */}
+      <div className="flex-1 p-4 flex flex-col gap-4 h-[100%] overflow-y-auto border-l-[.5vh] border-[#ccdb94] dark:border-gray-700">
+        <header className="mb-2 text-center">
+          <h2 className="text-2xl font-bold">Dashboard</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-4 ">
+            <div className="bg-[#ccdb94] dark:bg-green-800 p-3 rounded-lg shadow flex flex-col items-center justify-center border-2 border-dashed border-black dark:border-gray-400 flex flex-col justify-center items-center" 
+                 title="Corriente RMS Fase A">
+              <span className="text-xs">Corriente A</span>
+              <strong>{realTimeData.I_RMSA.toFixed(2)} A</strong>
+            </div>
+            <div className="bg-[#ccdb94] dark:bg-green-800 p-3 rounded-lg shadow flex flex-col items-center justify-center border-2 border-dashed border-black dark:border-gray-400 flex flex-col justify-center items-center" 
+                 title="Voltaje RMS Fase A">
+              <span className="text-xs">Voltaje A</span>
+              <strong>{realTimeData.V_RMSA.toFixed(2)} V</strong>
+            </div>
+            <div className="bg-[#ccdb94] dark:bg-green-800 p-3 rounded-lg shadow flex flex-col items-center justify-center border-2 border-dashed border-black dark:border-gray-400 flex flex-col justify-center items-center" 
+                 title="Potencia Promedio A">
+              <span className="text-xs">Potencia A</span>
+              <strong>{realTimeData.PPROM_A.toFixed(2)} W</strong>
+            </div>
+            <div className="bg-[#ccdb94] dark:bg-green-800 p-3 rounded-lg shadow flex flex-col items-center justify-center border-2 border-dashed border-black dark:border-gray-400 flex flex-col justify-center items-center" 
+                 title="kWh Total">
+              <span className="text-xs">Consumo Total</span>
+              <strong>{(realTimeData.kWhA + realTimeData.kWhB + realTimeData.kWhC).toFixed(2)} kWh</strong>
+            </div>
+            <div className="bg-[#ccdb94] dark:bg-green-800 p-3 rounded-lg shadow flex flex-col items-center justify-center border-2 border-dashed border-black dark:border-gray-400 flex flex-col justify-center items-center" 
+                 title="Última actualización">
+              <span className="text-xs">Última lectura</span>
+              <strong>{new Date(realTimeData.timestamp).toLocaleTimeString()}</strong>
+            </div>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Primer contenedor - ocupa 2 columnas en md+ */}
+          <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow h-[35vh] flex flex-col border-2 border-dashed border-black dark:border-gray-400 md:col-span-2">
+            <h4 className="font-semibold mb-2 text-center">Energía por Fase (kWh)</h4>
+            <div className="flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={barData}>
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="kWh" fill="#5f5ea3" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Segundo contenedor - ocupa 1 columna */}
+          <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow h-[35vh] flex flex-col border-2 border-dashed border-black dark:border-gray-400">
+            <h4 className="font-semibold mb-2 text-center">Potencia Promedio</h4>
+            <div className="flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    dataKey="value"
+                    label
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow h-[35vh] flex flex-col border-2 border-dashed border-black dark:border-gray-400 flex flex-col justify-center items-center">
+          <h4 className="font-semibold mb-2 text-center">Huella de Carbono Estimada (CO₂ kg)</h4>
+          <div className="flex-1">
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={lineData}>
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="CO2" stroke="#82ca9d" />
+                <Line type="monotone" dataKey="CO2" stroke="#ccdb94" />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
-
-      <aside className="sidebar">
-        <div className="energy-mode">
-          <h3>⚡ Energy Mode</h3>
-          <div className="mode-box">
-            <h4>Best Power Efficiency</h4>
-            <p>This mode will help to extend the power storage efficiency.</p>
-            <button>Change Plan</button>
-          </div>
-        </div>
-
-        <div className="energy-storage">
-          <h3>🔋 Energy Storage</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie
-                data={donutData}
-                cx="50%"
-                cy="50%"
-                innerRadius={50}
-                outerRadius={70}
-                dataKey="value"
-              >
-                {donutData.map((entry, index) => (
-                  <Cell key={`donut-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="legend">
-            <span>Main Power: 75%</span>
-            <span>Green Energy: 25%</span>
-          </div>
-        </div>
-      </aside>
     </div>
   )
 }
