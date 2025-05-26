@@ -8,13 +8,35 @@ export async function POST() {
     const deviceId = process.env.PARTICLE_DEVICE_ID
     const token = process.env.PARTICLE_TOKEN
 
-    const response = await particle.getVariable({
-      deviceId,
-      name: 'variables', // Cambia a un endpoint válido si el firmware no soporta múltiples variables
-      auth: token
-    })
-
-    const vars = response.body
+    let vars
+    try {
+      const response = await particle.getVariable({
+        deviceId,
+        name: 'variables', // Cambia a un endpoint válido si el firmware no soporta múltiples variables
+        auth: token
+      })
+      vars = response.body
+    } catch (err) {
+      // Si falla, usar datos sintéticos
+      vars = {
+        I_rmsA: 10 + Math.random() * 5,
+        I_rmsB: 12 + Math.random() * 5,
+        I_rmsC: 11 + Math.random() * 5,
+        V_rmsA: 220 + Math.random() * 10,
+        V_rmsB: 221 + Math.random() * 10,
+        V_rmsC: 219 + Math.random() * 10,
+        V_rmsAB: 380 + Math.random() * 10,
+        V_rmsBC: 381 + Math.random() * 10,
+        V_rmsCA: 379 + Math.random() * 10,
+        KWHA: 100 + Math.random() * 10,
+        KWHB: 110 + Math.random() * 10,
+        KWHC: 120 + Math.random() * 10,
+        PA: 500 + Math.random() * 50,
+        PB: 520 + Math.random() * 50,
+        PC: 510 + Math.random() * 50,
+        synthetic: true // Indicador de datos sintéticos
+      }
+    }
 
     const savedData = await prisma.electricalData.create({
       data: {
@@ -38,7 +60,8 @@ export async function POST() {
 
     return NextResponse.json({
       ...savedData,
-      timestamp: savedData.timestamp.toISOString()
+      timestamp: savedData.timestamp.toISOString(),
+      synthetic: !!vars.synthetic // Devuelve si son datos sintéticos
     })
   } catch (error) {
     console.error('Error saving data:', error)

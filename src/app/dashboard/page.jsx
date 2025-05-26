@@ -118,7 +118,6 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container">
       <div className="absolute top-4 right-4">
-        <ModeToggle />
       </div>
       <div className="main-content">
         <header className="header">
