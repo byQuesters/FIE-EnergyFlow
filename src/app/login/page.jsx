@@ -15,7 +15,7 @@ export default function Login() {
 
   React.useEffect(() => {
     if (status === 'loading') return;
-    if (session) router.push('/'); // si ya hay sesión, ir al mapa
+    if (session) router.push('/map'); // si ya hay sesión, ir al mapa
   }, [status, session]);
 
   const handleSubmit = async (e) => {
