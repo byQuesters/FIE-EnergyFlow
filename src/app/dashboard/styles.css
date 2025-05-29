@@ -32,20 +32,8 @@
 }
 
 .sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 2.2vh;
-  margin-top: 2vh;
-  padding: 2vh;
-  border-radius: 0vh;
-  height: 85vh;
-  max-height: 90vh;
-  overflow-y: auto;  
   scrollbar-width: thin;
   scrollbar-color: #888 #f1f1f10d;
-  width: 25%;
-  border: .3vh solid #a4bf42;
-  border-radius: 2vh;
 }
 
 .header h2 {
