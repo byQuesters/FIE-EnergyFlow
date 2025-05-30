@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 
+// Define el tipo del context para evitar "any"
+interface Context {
+  params: {
+    id: string;
+  };
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: any // <- importante: usar 'any' aquí
+  { params }: Context
 ) {
   const { id } = params;
 
