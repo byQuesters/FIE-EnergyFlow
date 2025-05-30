@@ -26,5 +26,4 @@ export async function GET(
   }
 }
 
-// Optional: Add other HTTP methods
 export const dynamic = 'force-dynamic';
