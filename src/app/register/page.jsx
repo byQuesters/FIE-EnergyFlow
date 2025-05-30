@@ -27,6 +27,12 @@ export default function Register() {
     setError('')
     setIsLoading(true)
     
+    if (!formData.email.endsWith('@ucol.mx')) {
+      setError('Solo se permiten correos institucionales ')
+      setIsLoading(false)
+      return
+    }
+
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -75,7 +81,9 @@ export default function Register() {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            placeholder="Correo electrónico" 
+            placeholder="Correo institucional" 
+            pattern="[a-zA-Z0-9._%+-]+@ucol\.mx$"
+            title="Solo se permiten correos institucionales"
             required
           />
           <input 
