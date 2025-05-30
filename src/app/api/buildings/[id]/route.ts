@@ -26,5 +26,5 @@ export async function GET(
   }
 }
 
-// Opcional: Puedes agregar otros métodos HTTP como POST, PUT, DELETE aquí
-export const dynamic = 'force-dynamic'; // Opcional: si necesitas que la ruta sea dinámica
+// Opcional: exportar otros métodos HTTP
+export const dynamic = 'force-dynamic';
