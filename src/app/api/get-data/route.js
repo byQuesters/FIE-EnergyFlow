@@ -1,4 +1,3 @@
-// /app/api/get-data/route.js
 import { NextResponse } from 'next/server';
 
 const DEVICE_ID = process.env.PARTICLE_DEVICE_ID2;
@@ -16,9 +15,8 @@ async function getParticleVariable(varName) {
   const url = `https://api.particle.io/v1/devices/${DEVICE_ID}/${varName}?access_token=${PARTICLE_TOKEN}`;
   
   try {
-    // Usar timeout más generoso, igual que tu script funcional
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 segundos
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     
     const res = await fetch(url, {
       method: 'GET',
@@ -37,7 +35,6 @@ async function getParticleVariable(varName) {
     
     const data = await res.json();
     
-    // Validación simple como en tu script funcional
     if (!data.hasOwnProperty('result')) {
       throw new Error('Invalid response format from Particle API');
     }
@@ -61,7 +58,6 @@ async function getParticleVariable(varName) {
 
 async function getAllParticleData() {
   try {
-    // Validación básica de variables de entorno
     if (!DEVICE_ID || !PARTICLE_TOKEN) {
       throw new Error('Missing PARTICLE_DEVICE_ID or PARTICLE_TOKEN environment variables');
     }
@@ -69,23 +65,12 @@ async function getAllParticleData() {
     console.log(`Fetching data from device: ${DEVICE_ID}`);
     console.log(`Using token: ${PARTICLE_TOKEN.substring(0, 8)}...`);
     
-    // Obtener todas las variables directamente, como en tu script funcional
-    console.log(`Fetching ${variables.length} variables...`);
     const results = await Promise.all(
       variables.map(varName => getParticleVariable(varName))
     );
     
-    // Procesar resultados
-    const successfulResults = [];
-    const errors = [];
-    
-    results.forEach((result) => {
-      if (result.success) {
-        successfulResults.push(result);
-      } else {
-        errors.push(result);
-      }
-    });
+    const successfulResults = results.filter(result => result.success);
+    const errors = results.filter(result => !result.success);
     
     console.log(`Fetch results: ${successfulResults.length} successful, ${errors.length} failed`);
     
@@ -98,14 +83,12 @@ async function getAllParticleData() {
         errors.map(e => `${e.name}: ${e.error}`));
     }
     
-    // Convertir resultados al formato esperado por el dashboard
     const dataMap = {};
     successfulResults.forEach(result => {
       console.log(`${result.name}: ${result.value}`);
       dataMap[result.name] = result.value || 0;
     });
     
-    // Mapeo correcto de variables (igual que en tu script funcional)
     const mappedData = {
       I_RMSA: dataMap.I_rmsA || 0,
       I_RMSB: dataMap.I_rmsB || 0,
@@ -148,11 +131,10 @@ async function getAllParticleData() {
       }
     };
     
-  } catch (error) {
-    console.error('Error fetching Particle data:', error);
+  } catch {
     return {
       success: false,
-      error: error.message,
+      error: 'Failed to fetch data from device',
       timestamp: new Date().toISOString(),
       details: {
         deviceId: DEVICE_ID ? `${DEVICE_ID.substring(0, 8)}...` : 'Not set',
@@ -164,7 +146,7 @@ async function getAllParticleData() {
 }
 
 // Next.js App Router API Route Handler
-export async function GET(request) {
+export async function GET() {
   try {
     console.log('=== API Route called: /api/get-data ===');
     console.log('Environment check:', {
@@ -175,7 +157,6 @@ export async function GET(request) {
     
     const result = await getAllParticleData();
     
-    // Headers CORS para desarrollo
     const headers = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -185,26 +166,16 @@ export async function GET(request) {
       'Expires': '0'
     };
     
-    if (result.success) {
-      return NextResponse.json(result, { 
-        status: 200,
-        headers
-      });
-    } else {
-      return NextResponse.json(result, { 
-        status: 500,
-        headers
-      });
-    }
-  } catch (error) {
-    console.error('API Route error:', error);
+    return NextResponse.json(result, { 
+      status: result.success ? 200 : 500,
+      headers
+    });
+  } catch {
     return NextResponse.json(
       { 
         success: false, 
         error: 'Internal server error',
-        details: error.message,
-        timestamp: new Date().toISOString(),
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        timestamp: new Date().toISOString()
       }, 
       { status: 500 }
     );
@@ -212,7 +183,7 @@ export async function GET(request) {
 }
 
 // Handle preflight requests for CORS
-export async function OPTIONS(request) {
+export async function OPTIONS() {
   return new Response(null, {
     status: 200,
     headers: {
@@ -246,7 +217,7 @@ export async function POST(request) {
       { error: 'POST method requires test: true in body' }, 
       { status: 400 }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Invalid JSON in request body' }, 
       { status: 400 }
