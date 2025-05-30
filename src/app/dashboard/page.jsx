@@ -1,3 +1,5 @@
+
+// /app/dashboard/page.jsx
 'use client'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -5,140 +7,209 @@ import {
   RadialBarChart, RadialBar, Legend
 } from 'recharts'
 
-import styles from "./styles.css"
-
 import * as React from "react";
 
 export default function Dashboard() {
   const [mounted, setMounted] = React.useState(false);
-
   const [realTimeData, setRealTimeData] = React.useState({
-    I_RMSA: 12.5,
-    I_RMSB: 11.8,
-    I_RMSC: 13.2,
-    V_RMSA: 220.5,
-    V_RMSB: 218.7,
-    V_RMSC: 221.3,
-    V_RMSAB: 380.2,
-    V_RMSBC: 379.8,
-    V_RMSCA: 381.1,
-    PPROM_A: 2750.8,
-    PPROM_B: 2580.3,
-    PPROM_C: 2920.1,
-    kWhA: 125.4,
-    kWhB: 118.7,
-    kWhC: 132.9,
+    I_RMSA: 0,
+    I_RMSB: 0,
+    I_RMSC: 0,
+    V_RMSA: 0,
+    V_RMSB: 0,
+    V_RMSC: 0,
+    V_RMSAB: 0,
+    V_RMSBC: 0,
+    V_RMSCA: 0,
+    PPROM_A: 0,
+    PPROM_B: 0,
+    PPROM_C: 0,
+    kWhA: 0,
+    kWhB: 0,
+    kWhC: 0,
     timestamp: new Date().toISOString()
   });
 
   const [historicalData, setHistoricalData] = React.useState([]);
   const [realtimeChartData, setRealtimeChartData] = React.useState([]);
-  const [isConnected, setIsConnected] = React.useState(true);
+  const [isConnected, setIsConnected] = React.useState(false);
+  const [connectionStatus, setConnectionStatus] = React.useState('Conectando...');
+  const [lastError, setLastError] = React.useState(null);
   const [dataStats, setDataStats] = React.useState({
-    realtimePoints: 150,
-    synthesizedPoints: 850,
-    totalPoints: 1000
+    realtimePoints: 0,
+    synthesizedPoints: 0,
+    totalPoints: 0,
+    lastSuccessfulFetch: null,
+    consecutiveErrors: 0
   });
+
+  // Test API connectivity
+  const testApiConnection = async () => {
+    try {
+      const response = await fetch('/api/get-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ test: true })
+      });
+      
+      const result = await response.json();
+      console.log('API Test Result:', result);
+      return result.success;
+    } catch (error) {
+      console.error('API Test Error:', error);
+      return false;
+    }
+  };
+
+  // Función para obtener datos de Particle
+  const fetchParticleData = async () => {
+    try {
+      setLastError(null);
+      
+      // First test if API is reachable
+      const apiWorking = await testApiConnection();
+      if (!apiWorking) {
+        throw new Error('API endpoint not responding');
+      }
+
+      const response = await fetch('/api/get-data', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Add timeout to prevent hanging
+        signal: AbortSignal.timeout(15000)
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('API Response:', result);
+      
+      if (result.success) {
+        setRealTimeData(result.data);
+        setIsConnected(true);
+        setConnectionStatus('Conectado');
+        
+        // Reset error counter
+        setDataStats(prev => ({
+          ...prev,
+          consecutiveErrors: 0,
+          lastSuccessfulFetch: new Date().toISOString()
+        }));
+        
+        // Actualizar datos históricos
+        setHistoricalData(prev => {
+          const updated = [result.data, ...prev];
+          return updated.length > 100 ? updated.slice(0, 100) : updated;
+        });
+
+        // Actualizar datos del gráfico en tiempo real
+        setRealtimeChartData(prev => {
+          const newPoint = {
+            time: new Date(result.data.timestamp).toLocaleTimeString(),
+            timestamp: result.data.timestamp,
+            totalPower: Math.abs(result.data.PPROM_A || 0) + Math.abs(result.data.PPROM_B || 0) + Math.abs(result.data.PPROM_C || 0),
+            totalEnergy: (result.data.kWhA || 0) + (result.data.kWhB || 0) + (result.data.kWhC || 0),
+            avgVoltage: ((result.data.V_RMSA || 0) + (result.data.V_RMSB || 0) + (result.data.V_RMSC || 0)) / 3,
+            avgCurrent: ((result.data.I_RMSA || 0) + (result.data.I_RMSB || 0) + (result.data.I_RMSC || 0)) / 3,
+            CO2: Math.round(((result.data.kWhA || 0) + (result.data.kWhB || 0) + (result.data.kWhC || 0)) * 0.233),
+            powerA: Math.abs(result.data.PPROM_A || 0),
+            powerB: Math.abs(result.data.PPROM_B || 0),
+            powerC: Math.abs(result.data.PPROM_C || 0)
+          };
+          
+          const updated = [newPoint, ...prev];
+          return updated.length > 20 ? updated.slice(0, 20) : updated;
+        });
+
+        // Actualizar estadísticas
+        setDataStats(prev => ({
+          ...prev,
+          realtimePoints: prev.realtimePoints + 1,
+          totalPoints: prev.totalPoints + 1
+        }));
+        
+      } else {
+        setIsConnected(false);
+        const errorMsg = result.error || 'Unknown error';
+        setConnectionStatus(`Error: ${errorMsg}`);
+        setLastError({
+          message: errorMsg,
+          details: result.details,
+          timestamp: new Date().toISOString()
+        });
+        
+        // Increment error counter
+        setDataStats(prev => ({
+          ...prev,
+          consecutiveErrors: prev.consecutiveErrors + 1
+        }));
+        
+        console.error('API returned error:', result);
+      }
+    } catch (error) {
+      setIsConnected(false);
+      const errorMsg = error.name === 'TimeoutError' 
+        ? 'Timeout - La conexión tardó demasiado'
+        : `Error de conexión: ${error.message}`;
+      
+      setConnectionStatus(errorMsg);
+      setLastError({
+        message: error.message,
+        type: error.name,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Increment error counter
+      setDataStats(prev => ({
+        ...prev,
+        consecutiveErrors: prev.consecutiveErrors + 1
+      }));
+      
+      console.error('Network/Fetch error:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+    }
+  };
 
   React.useEffect(() => {
     setMounted(true);
-
-    // Simulate initial historical data
-    const generateHistoricalData = () => {
-      const data = [];
-      for (let i = 0; i < 20; i++) {
-        const timestamp = new Date(Date.now() - i * 10000).toISOString();
-        data.push({
-          timestamp,
-          I_RMSA: 12 + Math.random() * 2,
-          I_RMSB: 11 + Math.random() * 2,
-          I_RMSC: 13 + Math.random() * 2,
-          V_RMSA: 218 + Math.random() * 5,
-          V_RMSB: 217 + Math.random() * 5,
-          V_RMSC: 219 + Math.random() * 5,
-          PPROM_A: 2700 + Math.random() * 100,
-          PPROM_B: 2500 + Math.random() * 100,
-          PPROM_C: 2900 + Math.random() * 100,
-          kWhA: 120 + Math.random() * 10,
-          kWhB: 115 + Math.random() * 10,
-          kWhC: 130 + Math.random() * 10
-        });
-      }
-      return data;
-    };
-
-    const initialData = generateHistoricalData();
-    setHistoricalData(initialData);
-
-    // Initialize real-time chart data
-    const initialChartData = initialData.slice(0, 20).reverse().map((item, index) => ({
-      time: new Date(item.timestamp).toLocaleTimeString(),
-      timestamp: item.timestamp,
-      totalPower: Math.abs(item.PPROM_A || 0) + Math.abs(item.PPROM_B || 0) + Math.abs(item.PPROM_C || 0),
-      totalEnergy: (item.kWhA || 0) + (item.kWhB || 0) + (item.kWhC || 0),
-      avgVoltage: ((item.V_RMSA || 0) + (item.V_RMSB || 0) + (item.V_RMSC || 0)) / 3,
-      avgCurrent: ((item.I_RMSA || 0) + (item.I_RMSB || 0) + (item.I_RMSC || 0)) / 3,
-      CO2: Math.round(((item.kWhA || 0) + (item.kWhB || 0) + (item.kWhC || 0)) * 0.233),
-      powerA: Math.abs(item.PPROM_A || 0),
-      powerB: Math.abs(item.PPROM_B || 0),
-      powerC: Math.abs(item.PPROM_C || 0)
-    }));
     
-    setRealtimeChartData(initialChartData);
-
-    // Simulate real-time updates every 10 seconds
+    // Initial data fetch
+    console.log('Starting initial data fetch...');
+    fetchParticleData();
+    
+    // Set up periodic fetching every 10 seconds
     const interval = setInterval(() => {
-      const newData = {
-        I_RMSA: 12 + Math.random() * 2,
-        I_RMSB: 11 + Math.random() * 2,
-        I_RMSC: 13 + Math.random() * 2,
-        V_RMSA: 218 + Math.random() * 5,
-        V_RMSB: 217 + Math.random() * 5,
-        V_RMSC: 219 + Math.random() * 5,
-        V_RMSAB: 378 + Math.random() * 5,
-        V_RMSBC: 377 + Math.random() * 5,
-        V_RMSCA: 379 + Math.random() * 5,
-        PPROM_A: 2700 + Math.random() * 100,
-        PPROM_B: 2500 + Math.random() * 100,
-        PPROM_C: 2900 + Math.random() * 100,
-        kWhA: realTimeData.kWhA + Math.random() * 0.1,
-        kWhB: realTimeData.kWhB + Math.random() * 0.1,
-        kWhC: realTimeData.kWhC + Math.random() * 0.1,
-        timestamp: new Date().toISOString()
-      };
-      
-      setRealTimeData(newData);
-      
-      // Update historical data
-      setHistoricalData(prev => {
-        const updated = [newData, ...prev];
-        return updated.length > 100 ? updated.slice(0, 100) : updated;
-      });
-
-      // Update real-time chart data
-      setRealtimeChartData(prev => {
-        const newPoint = {
-          time: new Date(newData.timestamp).toLocaleTimeString(),
-          timestamp: newData.timestamp,
-          totalPower: Math.abs(newData.PPROM_A || 0) + Math.abs(newData.PPROM_B || 0) + Math.abs(newData.PPROM_C || 0),
-          totalEnergy: (newData.kWhA || 0) + (newData.kWhB || 0) + (newData.kWhC || 0),
-          avgVoltage: ((newData.V_RMSA || 0) + (newData.V_RMSB || 0) + (newData.V_RMSC || 0)) / 3,
-          avgCurrent: ((newData.I_RMSA || 0) + (newData.I_RMSB || 0) + (newData.I_RMSC || 0)) / 3,
-          CO2: Math.round(((newData.kWhA || 0) + (newData.kWhB || 0) + (newData.kWhC || 0)) * 0.233),
-          powerA: Math.abs(newData.PPROM_A || 0),
-          powerB: Math.abs(newData.PPROM_B || 0),
-          powerC: Math.abs(newData.PPROM_C || 0)
-        };
-        
-        const updated = [newPoint, ...prev];
-        return updated.length > 20 ? updated.slice(0, 20) : updated;
-      });
+      console.log('Fetching periodic data...');
+      fetchParticleData();
     }, 10000);
-
-    return () => clearInterval(interval);
+    
+    return () => {
+      console.log('Cleaning up interval');
+      clearInterval(interval);
+    };
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) return (
+    <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando Dashboard...</p>
+      </div>
+    </div>
+  );
 
   // Data for static charts (instantaneous)
   const energyData = [
@@ -187,7 +258,10 @@ export default function Dashboard() {
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xl font-bold text-gray-800 dark:text-white">Monitor Energético</h2>
-            <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+            <div className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} ${isConnected ? 'animate-pulse' : ''}`}></div>
+              <span className="text-xs text-gray-600 dark:text-gray-400">{connectionStatus}</span>
+            </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Última actualización: {new Date(realTimeData.timestamp).toLocaleTimeString()}
@@ -225,7 +299,7 @@ export default function Dashboard() {
         <div className="mt-6">
           <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-white">Detalles por Fase</h3>
           <div className="space-y-3">
-            {['A', 'B', 'C'].map((phase, index) => (
+            {['A', 'B', 'C'].map((phase) => (
               <div key={phase} className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
                 <h4 className="font-medium text-sm mb-2 text-gray-700 dark:text-gray-300">Fase {phase}</h4>
                 <div className="grid grid-cols-3 gap-2 text-xs">
@@ -239,7 +313,9 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <p className="text-gray-500 dark:text-gray-400">Potencia</p>
-                    <p className="font-semibold">{Math.abs(realTimeData[`PPROM_${phase}`]).toFixed(0)}W</p>
+                    <p className={`font-semibold ${realTimeData[`PPROM_${phase}`] < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                      {realTimeData[`PPROM_${phase}`].toFixed(0)}W
+                    </p>
                   </div>
                 </div>
               </div>
@@ -251,9 +327,24 @@ export default function Dashboard() {
         <div className="mt-6 bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
           <h3 className="text-sm font-medium text-green-800 dark:text-green-400 mb-2">Impacto Ambiental</h3>
           <p className="text-lg font-bold text-green-700 dark:text-green-300">
-            {Math.round(totalEnergy * 0.233)} kg CO₂
+            {Math.round(Math.abs(totalEnergy) * 0.233)} kg CO₂
           </p>
           <p className="text-xs text-green-600 dark:text-green-400">Emisiones estimadas</p>
+        </div>
+
+        {/* Connection Info */}
+        <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-400 mb-2">Estado de Conexión</h3>
+          <div className="space-y-1 text-xs">
+            <p className="text-blue-600 dark:text-blue-400">
+              Estado: <span className={`font-semibold ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
+                {isConnected ? 'Conectado' : 'Desconectado'}
+              </span>
+            </p>
+            <p className="text-blue-600 dark:text-blue-400">
+              Datos recibidos: {dataStats.realtimePoints}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -367,11 +458,11 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
               <p className="text-2xl font-bold text-blue-600">{dataStats.realtimePoints}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Puntos en Tiempo Real</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Puntos de Particle</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{dataStats.synthesizedPoints}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Puntos Sintetizados</p>
+              <p className="text-2xl font-bold text-green-600">{historicalData.length}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Registros Históricos</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-purple-600">{dataStats.totalPoints}</p>
