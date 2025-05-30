@@ -7,47 +7,9 @@ import {
   RadialBarChart, RadialBar, Legend
 } from 'recharts'
 
-import styles from "./styles.css"
-
-import { useSearchParams } from 'next/navigation'
 import * as React from "react";
-import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
-const barData = [
-  { month: 'Jan', kWh: 400 },
-  { month: 'Feb', kWh: 300 },
-  { month: 'Mar', kWh: 500 },
-  { month: 'Apr', kWh: 350 },
-  { month: 'May', kWh: 600 },
-]
-
-const pieData = [
-  { name: 'Peak Hours', value: 65 },
-  { name: 'Off Hours', value: 35 },
-]
-
-const COLORS = ['#00C49F', '#FF8042']
-
-const lineData = [
-  { month: 'Jan', CO2: 120 },
-  { month: 'Feb', CO2: 110 },
-  { month: 'Mar', CO2: 130 },
-  { month: 'Apr', CO2: 100 },
-  { month: 'May', CO2: 95 },
-]
-
-const donutData = [
-  { name: 'Main Power', value: 50 },
-  { name: 'Green Energy', value: 25 },
-]
+import { useSearchParams } from 'next/navigation';
 
 export default function Dashboard() {
   const [mounted, setMounted] = React.useState(false);
@@ -68,7 +30,11 @@ export default function Dashboard() {
     kWhB: 0,
     kWhC: 0,
     timestamp: new Date().toISOString()
+
+
   });
+  const searchParams = useSearchParams();
+  const buildingCode = searchParams.get('building') || 'default'; // fallback si no hay código
 
   const [historicalData, setHistoricalData] = React.useState([]);
   const [realtimeChartData, setRealtimeChartData] = React.useState([]);
@@ -297,7 +263,9 @@ export default function Dashboard() {
       <div className="sidebar w-full lg:w-1/4 p-4 border-r-[.5vh] border-[#ccdb94] dark:border-gray-700 overflow-y-auto bg-gray-200 dark:bg-gray-800 scrollbar-thin scrollbar-thumb-gray-300/50 scrollbar-track-black hover:scrollbar-thumb-gray-400/70 dark:scrollbar-thumb-gray-600/50 dark:hover:scrollbar-thumb-gray-500/70">
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Monitor Energético</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+              Monitor Energético {buildingCode !== 'default' ? `- Edificio ${buildingCode}` : ''}
+            </h2>
             <div className="flex items-center space-x-2">
               <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} ${isConnected ? 'animate-pulse' : ''}`}></div>
               <span className="text-xs text-gray-600 dark:text-gray-400">{connectionStatus}</span>
@@ -360,19 +328,6 @@ export default function Dashboard() {
                 </div>
               </div>
             ))}
-    <div className="dashboard-container">
-      <div className="absolute top-4 right-4">
-        <ModeToggle />
-      </div>
-      <div className="main-content">
-        <header className="header">
-          <h2>Dashboard{buildingCode !== 'default' ? ` - Edificio ${buildingCode}` : ''}</h2>
-          <div className="cards">
-            <div className="card green" data-title="Corriente RMS Fase A"><strong>{realTimeData.I_RMSA.toFixed(2)} A</strong></div>
-            <div className="card green" data-title="Voltaje RMS Fase A"><strong>{realTimeData.V_RMSA.toFixed(2)} V</strong></div>
-            <div className="card green" data-title="Potencia Promedio A"><strong>{realTimeData.PPROM_A.toFixed(2)} W</strong></div>
-            <div className="card green" data-title="kWh Total"><strong>{(realTimeData.kWhA + realTimeData.kWhB + realTimeData.kWhC).toFixed(2)} kWh</strong></div>
-            <div className="card green" data-title="Última actualización"><strong>{new Date(realTimeData.timestamp).toLocaleTimeString()}</strong></div>
           </div>
         </div>
 
@@ -418,12 +373,6 @@ export default function Dashboard() {
                 />
                 <Area type="monotone" dataKey="totalPower" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
               </AreaChart>
-              <BarChart data={building.barData}>
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="kWh" fill="#8884d8" />
-              </BarChart>
             </ResponsiveContainer>
           </div>
 
@@ -434,7 +383,6 @@ export default function Dashboard() {
               <PieChart>
                 <Pie
                   data={powerData}
-                  data={building.pieData}
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
@@ -443,8 +391,6 @@ export default function Dashboard() {
                 >
                   {powerData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
-                  {building.pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value) => [`${value.toFixed(1)} W`, 'Potencia']} />
@@ -474,11 +420,6 @@ export default function Dashboard() {
                 <YAxis tick={{ fontSize: 12 }} domain={['dataMin - 5', 'dataMax + 5']} />
                 <Tooltip formatter={(value) => [`${value.toFixed(1)} V`, 'Voltaje']} />
                 <Line type="monotone" dataKey="voltage" stroke="#ff7300" strokeWidth={3} dot={{ fill: '#ff7300', r: 6 }} />
-              <LineChart data={building.lineData}>
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="CO2" stroke="#82ca9d" />
               </LineChart>
             </ResponsiveContainer>
           </div>

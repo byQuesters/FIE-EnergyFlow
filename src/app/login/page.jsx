@@ -37,9 +37,11 @@ export default function Login() {
       })
 
       if (res?.ok) {
-        router.push('/')
+        // Refresca la vista para que el header se actualice correctamente
+        router.refresh && router.refresh(); // Next.js 13+
+        router.push('/'); // o la ruta que corresponda
       } else {
-        setError(res?.error || 'Credenciales inválidas')
+        setError('Credenciales inválidas')
       }
     } catch (err) {
       setError('Error de conexión')
