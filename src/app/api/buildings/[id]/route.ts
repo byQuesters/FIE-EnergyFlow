@@ -1,14 +1,15 @@
-// /app/api/buildings/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { id } = context.params;
+
   try {
     const building = await prisma.building.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { electricalData: { take: 1, orderBy: { timestamp: 'desc' } } }
     });
 
