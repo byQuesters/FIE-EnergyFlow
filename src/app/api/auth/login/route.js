@@ -27,7 +27,7 @@ export async function POST(req) {
         name: user.name,
       },
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ message: "Error del servidor" }, { status: 500 });
   }
 }

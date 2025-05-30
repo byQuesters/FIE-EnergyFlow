@@ -42,7 +42,9 @@ export async function POST(req) {
       }
     })
 
-    const { password: _, ...userWithoutPassword } = newUser
+    // Remove password without using '_'
+    const userWithoutPassword = { ...newUser };
+    delete userWithoutPassword.password;
 
     return NextResponse.json({
       success: true,
