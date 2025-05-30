@@ -23,6 +23,12 @@ export default function Login() {
     setError('')
     setIsLoading(true)
     
+    if (!email.endsWith('@ucol.mx')) {
+      setError('Solo se permiten correos institucionales')
+      setIsLoading(false)
+      return
+    }
+    
     try {
       const res = await signIn('credentials', {
         redirect: false,
@@ -53,7 +59,7 @@ export default function Login() {
             type="email" 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Correo electrónico" 
+            placeholder="Correo institucional" 
             required
           />
           <input 

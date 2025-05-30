@@ -14,6 +14,13 @@ export async function POST(req) {
       }, { status: 400 })
     }
 
+    if (!email.endsWith('@ucol.mx')) {
+      return NextResponse.json({
+        success: false,
+        message: 'Solo se permiten correos institucionales'
+      }, { status: 400 })
+    }
+
     const existingUser = await prisma.user.findUnique({ 
       where: { email } 
     })
