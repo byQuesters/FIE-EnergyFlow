@@ -3,6 +3,9 @@ import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
+import React from "react";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,9 +13,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function Header() {
-  const { theme, setTheme } = useTheme();
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
+
+export default function Header() {
   return (
     <header className="w-full px-6 py-4 flex items-center justify-between bg-background text-foreground shadow">
       <div className="flex items-center gap-3">
@@ -30,6 +44,7 @@ export default function Header() {
           Acerca de
         </Link>
         <ModeToggle />
+        <LogoutDialog />
       </nav>
     </header>
   );
@@ -53,5 +68,34 @@ function ModeToggle() {
         <DropdownMenuItem onClick={() => setTheme("system")}>Sistema</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+function LogoutDialog() {
+  const [open, setOpen] = React.useState(false);
+
+  const handleLogout = () => {
+    setOpen(false);
+    signOut({ callbackUrl: "/login" });
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive">Cerrar sesión</Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Cerrar sesión?</AlertDialogTitle>
+          <AlertDialogDescription>
+            ¿Estás seguro de que quieres cerrar sesión? Esto te llevará a la página de inicio.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setOpen(false)}>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleLogout}>Cerrar sesión</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
