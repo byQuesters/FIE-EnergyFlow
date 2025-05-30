@@ -80,7 +80,7 @@ export default function Dashboard() {
           'Content-Type': 'application/json',
         },
         // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(15000)
+        signal: AbortSignal.timeout(20000)
       });
       
       console.log('Response status:', response.status);
@@ -194,7 +194,7 @@ export default function Dashboard() {
     const interval = setInterval(() => {
       console.log('Fetching periodic data...');
       fetchParticleData();
-    }, 10000);
+    }, 20000);
     
     return () => {
       console.log('Cleaning up interval');
@@ -257,7 +257,7 @@ export default function Dashboard() {
       <div className="sidebar w-full lg:w-1/4 p-4 border-r-[.5vh] border-[#ccdb94] dark:border-gray-700 overflow-y-auto bg-gray-200 dark:bg-gray-800 scrollbar-thin scrollbar-thumb-gray-300/50 scrollbar-track-black hover:scrollbar-thumb-gray-400/70 dark:scrollbar-thumb-gray-600/50 dark:hover:scrollbar-thumb-gray-500/70">
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Monitor Energético</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white">MONITOR EDIFICIO - LIOT</h2>
             <div className="flex items-center space-x-2">
               <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} ${isConnected ? 'animate-pulse' : ''}`}></div>
               <span className="text-xs text-gray-600 dark:text-gray-400">{connectionStatus}</span>
