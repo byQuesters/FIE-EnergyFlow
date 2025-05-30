@@ -16,328 +16,118 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// Sample data for different buildings
-const buildingData = {
-  LM: {
-    barData: [
-      { month: 'Jan', kWh: 350 },
-      { month: 'Feb', kWh: 280 },
-      { month: 'Mar', kWh: 420 },
-      { month: 'Apr', kWh: 310 },
-      { month: 'May', kWh: 500 },
-    ],
-    pieData: [
-      { name: 'Peak Hours', value: 60 },
-      { name: 'Off Hours', value: 40 },
-    ],
-    lineData: [
-      { month: 'Jan', CO2: 110 },
-      { month: 'Feb', CO2: 105 },
-      { month: 'Mar', CO2: 120 },
-      { month: 'Apr', CO2: 95 },
-      { month: 'May', CO2: 90 },
-    ],
-    stats: {
-      efficiency: '75%',
-      renewable: '65%',
-      emissionReduction: '45%',
-      costSavings: '$1,100 / mes',
-      carbonFootprint: '120 tCO₂/año'
-    }
-  },
-  LSE: {
-    barData: [
-      { month: 'Jan', kWh: 450 },
-      { month: 'Feb', kWh: 320 },
-      { month: 'Mar', kWh: 550 },
-      { month: 'Apr', kWh: 380 },
-      { month: 'May', kWh: 650 },
-    ],
-    pieData: [
-      { name: 'Peak Hours', value: 70 },
-      { name: 'Off Hours', value: 30 },
-    ],
-    lineData: [
-      { month: 'Jan', CO2: 130 },
-      { month: 'Feb', CO2: 115 },
-      { month: 'Mar', CO2: 140 },
-      { month: 'Apr', CO2: 105 },
-      { month: 'May', CO2: 100 },
-    ],
-    stats: {
-      efficiency: '68%',
-      renewable: '72%',
-      emissionReduction: '38%',
-      costSavings: '$1,350 / mes',
-      carbonFootprint: '170 tCO₂/año'
-    }
-  },
-  LEM: {
-    barData: [
-      { month: 'Jan', kWh: 400 },
-      { month: 'Feb', kWh: 300 },
-      { month: 'Mar', kWh: 500 },
-      { month: 'Apr', kWh: 350 },
-      { month: 'May', kWh: 600 },
-    ],
-    pieData: [
-      { name: 'Peak Hours', value: 65 },
-      { name: 'Off Hours', value: 35 },
-    ],
-    lineData: [
-      { month: 'Jan', CO2: 120 },
-      { month: 'Feb', CO2: 110 },
-      { month: 'Mar', CO2: 130 },
-      { month: 'Apr', CO2: 100 },
-      { month: 'May', CO2: 95 },
-    ],
-    stats: {
-      efficiency: '70%',
-      renewable: '70%',
-      emissionReduction: '40%',
-      costSavings: '$1,250 / mes',
-      carbonFootprint: '150 tCO₂/año'
-    }
-  },
-  LE: {
-    barData: [
-      { month: 'Jan', kWh: 300 },
-      { month: 'Feb', kWh: 250 },
-      { month: 'Mar', kWh: 400 },
-      { month: 'Apr', kWh: 280 },
-      { month: 'May', kWh: 450 },
-    ],
-    pieData: [
-      { name: 'Peak Hours', value: 55 },
-      { name: 'Off Hours', value: 45 },
-    ],
-    lineData: [
-      { month: 'Jan', CO2: 100 },
-      { month: 'Feb', CO2: 95 },
-      { month: 'Mar', CO2: 110 },
-      { month: 'Apr', CO2: 85 },
-      { month: 'May', CO2: 80 },
-    ],
-    stats: {
-      efficiency: '80%',
-      renewable: '75%',
-      emissionReduction: '50%',
-      costSavings: '$1,500 / mes',
-      carbonFootprint: '100 tCO₂/año'
-    }
-  },
-  D: {
-    barData: [
-      { month: 'Jan', kWh: 200 },
-      { month: 'Feb', kWh: 150 },
-      { month: 'Mar', kWh: 250 },
-      { month: 'Apr', kWh: 180 },
-      { month: 'May', kWh: 300 },
-    ],
-    pieData: [
-      { name: 'Peak Hours', value: 50 },
-      { name: 'Off Hours', value: 50 },
-    ],
-    lineData: [
-      { month: 'Jan', CO2: 90 },
-      { month: 'Feb', CO2: 85 },
-      { month: 'Mar', CO2: 95 },
-      { month: 'Apr', CO2: 75 },
-      { month: 'May', CO2: 70 },
-    ],
-    stats: {
-      efficiency: '85%',
-      renewable: '80%',
-      emissionReduction: '55%',
-      costSavings: '$1,800 / mes',
-      carbonFootprint: '90 tCO₂/año'
-    }
-  },
-  LIC: {
-    barData: [
-      { month: 'Jan', kWh: 600 },
-      { month: 'Feb', kWh: 500 },
-      { month: 'Mar', kWh: 700 },
-      { month: 'Apr', kWh: 550 },
-      { month: 'May', kWh: 800 },
-    ],
-    pieData: [
-      { name: 'Peak Hours', value: 80 },
-      { name: 'Off Hours', value: 20 },
-    ],
-    lineData: [
-      { month: 'Jan', CO2: 150 },
-      { month: 'Feb', CO2: 140 },
-      { month: 'Mar', CO2: 160 },
-      { month: 'Apr', CO2: 130 },
-      { month: 'May', CO2: 120 },
-    ],
-    stats: {
-      efficiency: '65%',
-      renewable: '60%',
-      emissionReduction: '35%',
-      costSavings: '$1,600 / mes',
-      carbonFootprint: '200 tCO₂/año'
-    }
-  },
-  LIOT: {
-    barData: [
-      { month: 'Jan', kWh: 700 },
-      { month: 'Feb', kWh: 600 },
-      { month: 'Mar', kWh: 800 },
-      { month: 'Apr', kWh: 650 },
-      { month: 'May', kWh: 900 },
-    ],
-    pieData: [
-      { name: 'Peak Hours', value: 90 },
-      { name: 'Off Hours', value: 10 },
-    ],
-    lineData: [
-      { month: 'Jan', CO2: 180 },
-      { month: 'Feb', CO2: 170 },
-      { month: 'Mar', CO2: 190 },
-      { month: 'Apr', CO2: 160 },
-      { month: 'May', CO2: 150 },
-    ],
-    stats: {
-      efficiency: '60%',
-      renewable: '55%',
-      emissionReduction: '30%',
-      costSavings: '$1,900 / mes',
-      carbonFootprint: '250 tCO₂/año'
-    }
-  },
-  A1: {
-    barData: [
-      { month: 'Jan', kWh: 800 },
-      { month: 'Feb', kWh: 700 },
-      { month: 'Mar', kWh: 900 },
-      { month: 'Apr', kWh: 750 },
-      { month: 'May', kWh: 1000 },
-    ],
-    pieData: [
-      { name: 'Peak Hours', value: 95 },
-      { name: 'Off Hours', value: 5 },
-    ],
-    lineData: [
-      { month: 'Jan', CO2: 200 },
-      { month: 'Feb', CO2: 190 },
-      { month: 'Mar', CO2: 210 },
-      { month: 'Apr', CO2: 180 },
-      { month: 'May', CO2: 170 },
-    ],
-    stats: {
-      efficiency: '55%',
-      renewable: '50%',
-      emissionReduction: '25%',
-      costSavings: '$2,000 / mes',
-      carbonFootprint: '300 tCO₂/año'
-    }
-  },
-  A2: {
-    barData: [
-      { month: 'Jan', kWh: 900 },
-      { month: 'Feb', kWh: 800 },
-      { month: 'Mar', kWh: 1000 },
-      { month: 'Apr', kWh: 850 },
-      { month: 'May', kWh: 1100 },
-    ],
-    pieData: [
-      { name: 'Peak Hours', value: 98 },
-      { name: 'Off Hours', value: 2 },
-    ],
-    lineData: [
-      { month: 'Jan', CO2: 220 },
-      { month: 'Feb', CO2: 210 },
-      { month: 'Mar', CO2: 230 },
-      { month: 'Apr', CO2: 200 },
-      { month: 'May', CO2: 190 },
-    ],
-    stats: {
-      efficiency: '50%',
-      renewable: '45%',
-      emissionReduction: '20%',
-      costSavings: '$2,200 / mes',
-      carbonFootprint: '350 tCO₂/año'
-    }
-  },
-  A3: {
-    barData: [
-      { month: 'Jan', kWh: 1000 },
-      { month: 'Feb', kWh: 900 },
-      { month: 'Mar', kWh: 1100 },
-      { month: 'Apr', kWh: 950 },
-      { month: 'May', kWh: 1200 },
-    ],
-    pieData: [
-      { name: 'Peak Hours', value: 99 },
-      { name: 'Off Hours', value: 1 },
-    ],
-    lineData: [
-      { month: 'Jan', CO2: 250 },
-      { month: 'Feb', CO2: 240 },
-      { month: 'Mar', CO2: 260 },
-      { month: 'Apr', CO2: 230 },
-      { month: 'May', CO2: 220 },
-    ],
-    stats: {
-      efficiency: '45%',
-      renewable: '40%',
-      emissionReduction: '15%',
-      costSavings: '$2,500 / mes',
-      carbonFootprint: '400 tCO₂/año'
-    }
-  },
-};
+const barData = [
+  { month: 'Jan', kWh: 400 },
+  { month: 'Feb', kWh: 300 },
+  { month: 'Mar', kWh: 500 },
+  { month: 'Apr', kWh: 350 },
+  { month: 'May', kWh: 600 },
+]
+
+const pieData = [
+  { name: 'Peak Hours', value: 65 },
+  { name: 'Off Hours', value: 35 },
+]
 
 const COLORS = ['#00C49F', '#FF8042']
+
+const lineData = [
+  { month: 'Jan', CO2: 120 },
+  { month: 'Feb', CO2: 110 },
+  { month: 'Mar', CO2: 130 },
+  { month: 'Apr', CO2: 100 },
+  { month: 'May', CO2: 95 },
+]
 
 const donutData = [
   { name: 'Main Power', value: 50 },
   { name: 'Green Energy', value: 25 },
 ]
 
-function ModeToggle() {
-  const { setTheme } = useTheme();
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          System
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
 export default function Dashboard() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
-  const searchParams = useSearchParams();
-  const buildingCode = searchParams.get('building') || 'default';
-  const building = buildingData[buildingCode] || buildingData.default;
+
+  const [realTimeData, setRealTimeData] = React.useState({
+    I_RMSA: 0,
+    I_RMSB: 0,
+    I_RMSC: 0,
+    V_RMSA: 0,
+    V_RMSB: 0,
+    PPROM_A: 0,
+    PPROM_B: 0,
+    PPROM_C: 0,
+    kWhA: 0,
+    kWhB: 0,
+    kWhC: 0,
+    timestamp: new Date().toISOString()
+  });
+  const [historicalData, setHistoricalData] = React.useState([]);
+  const [isConnected, setIsConnected] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
+
+    const loadInitialData = async () => {
+      try {
+        const response = await fetch('/api/get-data');
+        const { latestData, historical } = await response.json();
+        setRealTimeData(prev => ({ ...prev, ...latestData }));
+        setHistoricalData(historical);
+        setIsConnected(true);
+      } catch (error) {
+        console.error("Error loading initial data:", error);
+        setIsConnected(false);
+      }
+    };
+
+    loadInitialData();
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/save-data', { method: 'POST' });
+        const newData = await res.json();
+        setRealTimeData(prev => ({ ...prev, ...newData }));
+        setHistoricalData(prev => {
+          const updated = [newData, ...prev];
+          return updated.length > 100 ? updated.slice(0, 100) : updated;
+        });
+        setIsConnected(true);
+      } catch (err) {
+        console.error("Error updating data:", err);
+        setIsConnected(false);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  if (!mounted) {
-    return null;
-  }
+  if (!mounted) return null;
+
+  // Dinamizar datos usando datos reales
+  const barData = [
+    { month: 'Fase A', kWh: realTimeData.kWhA },
+    { month: 'Fase B', kWh: realTimeData.kWhB },
+    { month: 'Fase C', kWh: realTimeData.kWhC },
+  ];
+
+  const pieData = [
+    { name: 'Potencia A', value: realTimeData.PPROM_A },
+    { name: 'Potencia B', value: realTimeData.PPROM_B },
+    { name: 'Potencia C', value: realTimeData.PPROM_C },
+  ];
+
+  const lineData = historicalData.slice(0, 5).reverse().map((entry, index) => ({
+    month: `#${index + 1}`,
+    CO2: Math.round((entry.kWhA + entry.kWhB + entry.kWhC) * 0.233), // ejemplo: 0.233 kgCO2/kWh
+  }));
+
+  const donutData = [
+    { name: 'Main Power', value: 75 },
+    { name: 'Green Energy', value: 25 },
+  ];
+
+  const COLORS = ['#00C49F', '#FF8042', '#8884d8'];
 
   return (
     <div className="dashboard-container">
@@ -348,17 +138,17 @@ export default function Dashboard() {
         <header className="header">
           <h2>Dashboard{buildingCode !== 'default' ? ` - Edificio ${buildingCode}` : ''}</h2>
           <div className="cards">
-            <div className="card green" data-title="Overall System Efficiency"><strong>{building.stats.efficiency}</strong></div>
-            <div className="card green" data-title="Renewable Energy Utilization"><strong>{building.stats.renewable}</strong></div>
-            <div className="card green" data-title="Carbon Emission Reduction"><strong>{building.stats.emissionReduction}</strong></div>
-            <div className="card green" data-title="Energy Cost Savings"><strong>{building.stats.costSavings}</strong></div>
-            <div className="card green" data-title="Overall System Carbon Footprint"><strong>{building.stats.carbonFootprint}</strong></div>
+            <div className="card green" data-title="Corriente RMS Fase A"><strong>{realTimeData.I_RMSA.toFixed(2)} A</strong></div>
+            <div className="card green" data-title="Voltaje RMS Fase A"><strong>{realTimeData.V_RMSA.toFixed(2)} V</strong></div>
+            <div className="card green" data-title="Potencia Promedio A"><strong>{realTimeData.PPROM_A.toFixed(2)} W</strong></div>
+            <div className="card green" data-title="kWh Total"><strong>{(realTimeData.kWhA + realTimeData.kWhB + realTimeData.kWhC).toFixed(2)} kWh</strong></div>
+            <div className="card green" data-title="Última actualización"><strong>{new Date(realTimeData.timestamp).toLocaleTimeString()}</strong></div>
           </div>
         </header>
 
         <div className="top-charts">
           <div className="chart-box">
-            <h4>Uso de energía (kWh/mes)</h4>
+            <h4>Energía por Fase (kWh)</h4>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={building.barData}>
                 <XAxis dataKey="month" />
@@ -370,7 +160,7 @@ export default function Dashboard() {
           </div>
 
           <div className="chart-box">
-            <h4>Daily Energy Cost</h4>
+            <h4>Potencia Promedio</h4>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
@@ -394,7 +184,7 @@ export default function Dashboard() {
 
         <div className="bottom-chart">
           <div className="chart-box full-width">
-            <h4>Carbon Footprint CO₂ (kg/mes)</h4>
+            <h4>Huella de Carbono Estimada (CO₂ kg)</h4>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={building.lineData}>
                 <XAxis dataKey="month" />
@@ -437,11 +227,32 @@ export default function Dashboard() {
             </PieChart>
           </ResponsiveContainer>
           <div className="legend">
-            <span>Main Power: 50%</span>
+            <span>Main Power: 75%</span>
             <span>Green Energy: 25%</span>
           </div>
         </div>
       </aside>
     </div>
   )
+}
+
+function ModeToggle() {
+  const { setTheme } = useTheme();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="icon">
+          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <span className="sr-only">Toggle theme</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => setTheme("light")}>Claro</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("dark")}>Oscuro</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("system")}>Sistema</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }

@@ -1,0 +1,54 @@
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "name" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ElectricalData" (
+    "id" SERIAL NOT NULL,
+    "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "I_RMSA" DOUBLE PRECISION NOT NULL,
+    "I_RMSB" DOUBLE PRECISION NOT NULL,
+    "I_RMSC" DOUBLE PRECISION NOT NULL,
+    "V_RMSA" DOUBLE PRECISION NOT NULL,
+    "V_RMSB" DOUBLE PRECISION NOT NULL,
+    "V_RMSC" DOUBLE PRECISION NOT NULL,
+    "V_RMSAB" DOUBLE PRECISION NOT NULL,
+    "V_RMSBC" DOUBLE PRECISION NOT NULL,
+    "V_RMSCA" DOUBLE PRECISION NOT NULL,
+    "kWhA" DOUBLE PRECISION NOT NULL,
+    "kWhB" DOUBLE PRECISION NOT NULL,
+    "kWhC" DOUBLE PRECISION NOT NULL,
+    "PPROM_A" DOUBLE PRECISION NOT NULL,
+    "PPROM_B" DOUBLE PRECISION NOT NULL,
+    "PPROM_C" DOUBLE PRECISION NOT NULL,
+
+    CONSTRAINT "ElectricalData_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "_ElectricalDataToUser" (
+    "A" INTEGER NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_ElectricalDataToUser_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE INDEX "_ElectricalDataToUser_B_index" ON "_ElectricalDataToUser"("B");
+
+-- AddForeignKey
+ALTER TABLE "_ElectricalDataToUser" ADD CONSTRAINT "_ElectricalDataToUser_A_fkey" FOREIGN KEY ("A") REFERENCES "ElectricalData"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ElectricalDataToUser" ADD CONSTRAINT "_ElectricalDataToUser_B_fkey" FOREIGN KEY ("B") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
