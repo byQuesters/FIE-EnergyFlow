@@ -1,14 +1,11 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import Link from "next/link";
+import Image from 'next/image';
 import { Github, Instagram, Linkedin, Mail } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export function Footer() {
-  const { theme } = useTheme();
-  
   // Estilo personalizado para los botones
   const customButtonClass = `
     center flex items-center justify-center
@@ -18,7 +15,7 @@ export function Footer() {
     hover:text-[#5f5ea3] hover:shadow-lg 
     transition-all duration-300
     rounded-lg p-2 m-1
-    h-10 w-10  // Tamaño fijo para iconos
+    h-10 w-10
   `;
   
   return (
@@ -27,9 +24,11 @@ export function Footer() {
         {/* Logo y descripción - Centrado */}
         <div className="flex flex-col items-center space-y-4 max-w-2xl">
           <div className="flex items-center space-x-3">
-            <img 
+            <Image 
               src="/UCOL_Icon.png" 
               alt="Logo UCOL" 
+              width={64}
+              height={64}
               className="w-16 h-16 object-contain opacity-90"
             />
             <h3 className="font-bold text-2xl text-primary dark:text-primary-foreground">
