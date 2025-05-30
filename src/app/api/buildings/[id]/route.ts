@@ -3,14 +3,19 @@ import prisma from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: any // <- importante: usar 'any' aquí
 ) {
-  const { id } = context.params;
+  const { id } = params;
 
   try {
     const building = await prisma.building.findUnique({
       where: { id },
-      include: { electricalData: { take: 1, orderBy: { timestamp: 'desc' } } }
+      include: {
+        electricalData: {
+          take: 1,
+          orderBy: { timestamp: 'desc' },
+        },
+      },
     });
 
     if (!building) {
