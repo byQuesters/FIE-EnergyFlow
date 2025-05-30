@@ -1,16 +1,33 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/db';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function GET(request: NextRequest, context: any) {
+  const { id } = context.params;
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+  try {
+    const building = await prisma.building.findUnique({
+      where: { id },
+      include: {
+        electricalData: {
+          take: 1,
+          orderBy: { timestamp: 'desc' },
+        },
+      },
+    });
 
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-];
+    if (!building) {
+      return NextResponse.json({ error: 'Building not found' }, { status: 404 });
+    }
 
-export default eslintConfig;
+    return NextResponse.json(building);
+  } catch (error) {
+    console.error('Error fetching building:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch building' },
+      { status: 500 }
+    );
+  }
+}
+
+export const dynamic = 'force-dynamic';
