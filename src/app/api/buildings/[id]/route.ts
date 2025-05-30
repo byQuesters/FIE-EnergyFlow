@@ -1,9 +1,9 @@
 // /app/api/buildings/[id]/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -26,5 +26,5 @@ export async function GET(
   }
 }
 
-// Opcional: exportar otros métodos HTTP
+// Optional: Add other HTTP methods
 export const dynamic = 'force-dynamic';
