@@ -166,7 +166,7 @@ export function Footer() {
             
             <div className="pt-2 text-center sm:text-left">
               <p className="text-xs text-muted-foreground/70">
-                Facultad de Ingeniería Eléctrica
+                Facultad de Ingeniería Eléctromecánica
               </p>
               <p className="text-xs text-muted-foreground/70">
                 Universidad de Colima
@@ -180,7 +180,7 @@ export function Footer() {
       <div className="border-t border-border py-4">
         <div className="container flex flex-col items-center gap-2 px-4">
           <p className="text-xs text-muted-foreground text-center">
-            © {new Date().getFullYear()} ENERGY FLOW - Proyecto académico. Todos los derechos reservados.
+            © {new Date().getFullYear()} ENERGY FLOW - Todos los derechos reservados.
           </p>
           <p className="text-xs text-muted-foreground/60">
             v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}
