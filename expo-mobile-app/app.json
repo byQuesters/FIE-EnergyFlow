@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Energy Flow",
+    "slug": "energy-flow-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/ucol-icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#7b8f35"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ucol.energyflow"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#7b8f35"
+      },
+      "package": "com.ucol.energyflow"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#7b8f35",
+          "image": "./assets/splash.png",
+          "dark": {
+            "image": "./assets/splash.png",
+            "backgroundColor": "#2c3e50"
+          },
+          "imageWidth": 200
+        }
+      ]
+    ],
+    "scheme": "energy-flow",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
