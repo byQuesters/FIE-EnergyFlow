@@ -120,7 +120,7 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#1e40af', // Color del gradiente para que combine
+    backgroundColor: '#93ab6bff', // Color del gradiente para que combine
   },
   container: {
     flex: 1,
