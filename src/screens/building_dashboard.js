@@ -283,7 +283,7 @@ const BuildingDashboard = ({ route, navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header con información del edificio */}
-        <LinearGradient colors={['#1e40af', '#3b82f6']} style={styles.header}>
+        <LinearGradient colors={['#93ab6bff', '#93ab6bff']} style={styles.header}>
           <Text style={styles.headerTitle}>{buildingName}</Text>
           <Text style={styles.headerSubtitle}>
             Última actualización: {new Date(currentData.realTimeData.timestamp).toLocaleTimeString()}
@@ -322,7 +322,7 @@ const BuildingDashboard = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#1e40af', // Color del header para que combine
+    backgroundColor: '#93ab6bff', // Color del header para que combine
   },
   container: {
     flex: 1,
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   refreshButton: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#abd16dff',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
   dataValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1e40af',
+    color: '#93ab6bff',
   },
   summaryGrid: {
     flexDirection: 'row',

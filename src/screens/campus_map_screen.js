@@ -133,7 +133,7 @@ const CampusMapScreen = ({ navigation }) => {
       <View style={styles.container}>
         {/* Header */}
         <LinearGradient
-          colors={['#1e40af', '#3b82f6']}
+          colors={['#93ab6bff', '#93ab6bff']}
           style={styles.header}
         >
           <View style={styles.headerContent}>
@@ -255,7 +255,7 @@ const CampusMapScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#1e40af', // Color del header para que combine
+    backgroundColor: '#93ab6bff', // Color del header para que combine
   },
   container: {
     flex: 1,
