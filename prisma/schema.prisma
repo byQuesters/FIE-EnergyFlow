@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String           @id @default(uuid())
+  email          String           @unique
+  password       String
+  name           String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  ElectricalData ElectricalData[] @relation("ElectricalDataToUser")
+}
+
+model ElectricalData {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+  I_RMSA    Float
+  I_RMSB    Float
+  I_RMSC    Float
+  V_RMSA    Float
+  V_RMSB    Float
+  V_RMSC    Float
+  V_RMSAB   Float
+  V_RMSBC   Float
+  V_RMSCA   Float
+  kWhA      Float
+  kWhB      Float
+  kWhC      Float
+  PPROM_A   Float
+  PPROM_B   Float
+  PPROM_C   Float
+  User      User[]   @relation("ElectricalDataToUser")
+}
