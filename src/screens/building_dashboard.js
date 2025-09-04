@@ -7,10 +7,10 @@ import {
   Dimensions,
   TouchableOpacity,
   Platform,
-  SafeAreaView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LineChart, BarChart } from 'react-native-chart-kit';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getBuildingData } from '../data/synthetic_data';
 
 const { width } = Dimensions.get('window');
@@ -20,6 +20,9 @@ const BuildingDashboard = ({ route, navigation }) => {
   const [activeTab, setActiveTab] = useState('realtime');
   const [currentData, setCurrentData] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Obtener solo el padding superior del safe area
+  const insets = useSafeAreaInsets();
 
   // Actualizar datos cada 5 segundos para simular tiempo real
   useEffect(() => {
@@ -43,7 +46,7 @@ const BuildingDashboard = ({ route, navigation }) => {
 
   if (!currentData) {
     return (
-      <View style={[styles.container, styles.loading]}>
+      <View style={[styles.container, styles.loading, { paddingTop: insets.top }]}>
         <Text style={styles.loadingText}>Cargando datos...</Text>
       </View>
     );
@@ -95,7 +98,7 @@ const BuildingDashboard = ({ route, navigation }) => {
     <View style={styles.tabContent}>
       {/* Resumen principal */}
       <View style={styles.summaryCards}>
-        <LinearGradient colors={['#3b82f6', '#1e40af']} style={styles.summaryCard}>
+        <LinearGradient colors={['#abd388ff', '#83ae68ff']} style={styles.summaryCard}>
           <Text style={styles.summaryCardTitle}>Consumo Total</Text>
           <Text style={styles.summaryCardValue}>{currentData.consumption} kWh</Text>
         </LinearGradient>
@@ -115,7 +118,7 @@ const BuildingDashboard = ({ route, navigation }) => {
         disabled={refreshing}
       >
         <Text style={styles.refreshButtonText}>
-          {refreshing ? 'Actualizando...' : '🔄 Actualizar Datos'}
+          {refreshing ? 'Actualizando...' : 'Actualizar Datos'}
         </Text>
       </TouchableOpacity>
 
@@ -280,53 +283,49 @@ const BuildingDashboard = ({ route, navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header con información del edificio */}
-        <LinearGradient colors={['#93ab6bff', '#93ab6bff']} style={styles.header}>
-          <Text style={styles.headerTitle}>{buildingName}</Text>
-          <Text style={styles.headerSubtitle}>
-            Última actualización: {new Date(currentData.realTimeData.timestamp).toLocaleTimeString()}
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header con información del edificio */}
+      <LinearGradient colors={['#93ab6bff', '#b7c586ff']} style={styles.header}>
+        <Text style={styles.headerTitle}>{buildingName}</Text>
+        <Text style={styles.headerSubtitle}>
+          Última actualización: {new Date(currentData.realTimeData.timestamp).toLocaleTimeString()}
+        </Text>
+      </LinearGradient>
+
+      {/* Tabs */}
+      <View style={styles.tabsContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'realtime' && styles.activeTab]}
+          onPress={() => setActiveTab('realtime')}
+        >
+          <Text style={[styles.tabText, activeTab === 'realtime' && styles.activeTabText]}>
+            Tiempo Real
           </Text>
-        </LinearGradient>
-
-        {/* Tabs */}
-        <View style={styles.tabsContainer}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'realtime' && styles.activeTab]}
-            onPress={() => setActiveTab('realtime')}
-          >
-            <Text style={[styles.tabText, activeTab === 'realtime' && styles.activeTabText]}>
-              Tiempo Real
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'historical' && styles.activeTab]}
-            onPress={() => setActiveTab('historical')}
-          >
-            <Text style={[styles.tabText, activeTab === 'historical' && styles.activeTabText]}>
-              Histórico
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Contenido */}
-        <ScrollView style={styles.content}>
-          {activeTab === 'realtime' ? renderRealTimeData() : renderHistoricalData()}
-        </ScrollView>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'historical' && styles.activeTab]}
+          onPress={() => setActiveTab('historical')}
+        >
+          <Text style={[styles.tabText, activeTab === 'historical' && styles.activeTabText]}>
+            Histórico
+          </Text>
+        </TouchableOpacity>
       </View>
-    </SafeAreaView>
+
+      {/* Contenido */}
+      <ScrollView style={styles.content}>
+        {activeTab === 'realtime' ? renderRealTimeData() : renderHistoricalData()}
+        {/* Agregar padding bottom para compensar la barra de gestos */}
+        <View style={{ height: insets.bottom || 20 }} />
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#93ab6bff', // Color del header para que combine
-  },
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#93ab6bff', // Color del header para que combine
     ...(Platform.OS === 'web' && {
       height: '100vh',
       overflowY: 'auto',
@@ -352,15 +351,16 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 1)',
     marginTop: 4,
+    fontWeight: 'bold',
   },
   tabsContainer: {
     flexDirection: 'row',
     backgroundColor: 'white',
-    marginHorizontal: 20,
+    marginHorizontal: 0,
     marginTop: -10,
-    borderRadius: 12,
+    borderRadius: 0,
     padding: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -373,24 +373,47 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#00000034',
+    borderStyle: 'solid',
+    transitionDuration: '500ms',
+    transitionProperty: 'background-color, color',
+    transitionTimingFunction: 'ease-in-out',
+    marginHorizontal: 4,
   },
   activeTab: {
-    backgroundColor: '#93ab6bff',
+    backgroundColor: '#a3bb7cff',
+    shadowColor: '#000000ff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
+    elevation: 5,
+    borderWidth: 0,
+    borderColor: 'black',
+    borderStyle: 'solid',
+    transitionDuration: '500ms',
+    transitionProperty: 'background-color, color',
+    transitionTimingFunction: 'ease-in-out',
+    fontWeight: 'bold',
+    border: 1,
+    borderColor: '#00000030',
+    borderWidth: 1,
   },
   tabText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#6b7280',
   },
   activeTabText: {
     color: 'white',
+    fontWeight: 'bold',
   },
   content: {
     flex: 1,
+    backgroundColor: '#f8fafcee',
     paddingTop: 20,
     ...(Platform.OS === 'web' && {
       overflowY: 'auto',
-      maxHeight: 'calc(100vh - 140px)', // Ajustar según altura del header y tabs
     }),
   },
   tabContent: {
@@ -411,8 +434,9 @@ const styles = StyleSheet.create({
   },
   summaryCardTitle: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 1)',
     marginBottom: 8,
+    fontWeight: 'bold',
   },
   summaryCardValue: {
     fontSize: 24,
@@ -420,7 +444,7 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   refreshButton: {
-    backgroundColor: '#abd16dff',
+    backgroundColor: '#aecf78ff',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -434,7 +458,7 @@ const styles = StyleSheet.create({
   refreshButtonText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   dataCard: {
     backgroundColor: 'white',
@@ -446,6 +470,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    border: 1,
+    borderColor: '#00000030',
+    borderWidth: 1,
   },
   chartCard: {
     backgroundColor: 'white',
@@ -458,10 +485,13 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     alignItems: 'center',
+    border: 1,
+    borderColor: '#00000030',
+    borderWidth: 1,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#374151',
     marginBottom: 15,
   },
@@ -482,6 +512,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
     marginBottom: 5,
+    fontWeight: 'bold',
   },
   dataValue: {
     fontSize: 20,

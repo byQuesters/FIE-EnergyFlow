@@ -12,6 +12,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // import { signOut } from '../../lib/auth'; // Ya no necesario
 import { getBuildingData } from '../data/synthetic_data';
 
@@ -56,6 +57,9 @@ const CampusMapScreen = ({ navigation }) => {
   const [buildingsData, setBuildingsData] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  
+  // Obtener solo el padding superior del safe area
+  const insets = useSafeAreaInsets();
 
   // Función para actualizar datos de todos los edificios
   const updateBuildingsData = () => {
@@ -129,37 +133,36 @@ const CampusMapScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <LinearGradient
-          colors={['#93ab6bff', '#93ab6bff']}
-          style={styles.header}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.headerTitle}>Panel de Administración</Text>
-              <Text style={styles.headerSubtitle}>
-                Sistema de Monitoreo Energético
-              </Text>
-            </View>
-            <TouchableOpacity onPress={showSystemInfo} style={styles.infoButton}>
-              <Text style={styles.infoText}>ℹ️</Text>
-            </TouchableOpacity>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
+      <LinearGradient
+        colors={['#93ab6bff', '#b7c586ff']}
+        style={styles.header}
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>ENERGY FLOW</Text>
+            <Text style={styles.headerSubtitle}>
+              Sistema de Monitoreo Energético
+            </Text>
           </View>
-        </LinearGradient>
+          <TouchableOpacity onPress={showSystemInfo} style={styles.infoButton}>
+            <Text style={styles.infoText}>i</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
 
-        <ScrollView 
-          style={styles.content}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={['#3b82f6']}
-              tintColor={'#3b82f6'}
-            />
-          }
-        >
+      <ScrollView 
+        style={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#3b82f6']}
+            tintColor={'#3b82f6'}
+          />
+        }
+      >
         {/* Resumen del consumo */}
         <View style={styles.summaryContainer}>
           <Text style={styles.summaryTitle}>Consumo Total del Campus</Text>
@@ -246,20 +249,17 @@ const CampusMapScreen = ({ navigation }) => {
             </TouchableOpacity>
           ))}
         </View>
+        {/* Agregar padding bottom para compensar la barra de gestos */}
+        <View style={{ height: insets.bottom || 20 }} />
       </ScrollView>
     </View>
-  </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#93ab6bff', // Color del header para que combine
-  },
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#93ab6bff', // Color del header para que combine
     ...(Platform.OS === 'web' && {
       height: '100vh',
       overflowY: 'auto',
@@ -287,6 +287,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
     marginTop: 4,
+    fontWeight: 'bold',
   },
   infoButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -298,12 +299,13 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 20,
+    color: 'white',
   },
   content: {
     flex: 1,
+    backgroundColor: '#f8fafcee',
     ...(Platform.OS === 'web' && {
       overflowY: 'auto',
-      maxHeight: 'calc(100vh - 95px)', // Ajustar según altura del header
     }),
   },
   summaryContainer: {
@@ -317,22 +319,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    border: 1,
+    borderColor: '#ab70c1ff',
+    borderWidth: 1,
+    shadowColor: '#ab70c1ff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 5,
+    elevation: 5,
   },
   summaryTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#374151',
     marginBottom: 10,
   },
   summaryValue: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1e40af',
+    color: '#ab70c1ff',
   },
   summarySubtitle: {
     fontSize: 14,
     color: '#6b7280',
     marginTop: 5,
+    fontWeight: 'bold',
   },
   mapContainer: {
     backgroundColor: 'white',
@@ -345,10 +356,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    border: 1,
+    borderColor: '#00000030',
+    borderWidth: 1,
   },
   mapTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#374151',
     marginBottom: 15,
     textAlign: 'center',
@@ -418,7 +432,7 @@ const styles = StyleSheet.create({
   buildingConsumption: {
     color: 'white',
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   buildingsListContainer: {
     backgroundColor: 'white',
@@ -431,6 +445,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    border: 1,
+    borderColor: '#00000030',
+    borderWidth: 1,
   },
   buildingsListTitle: {
     fontSize: 18,
@@ -443,6 +460,9 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
+    border: 1,
+    borderColor: '#00000030',
+    borderWidth: 1,
   },
   buildingCardContent: {
     flexDirection: 'row',
@@ -454,18 +474,20 @@ const styles = StyleSheet.create({
   },
   buildingCardName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#374151',
     marginBottom: 4,
   },
   buildingCardConsumption: {
     fontSize: 14,
     color: '#6b7280',
+    fontWeight: 'bold',
   },
   buildingCardTime: {
     fontSize: 12,
     color: '#9ca3af',
     marginTop: 4,
+    fontWeight: 'bold',
   },
   buildingCardRight: {
     alignItems: 'center',
@@ -478,7 +500,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
 });
 
