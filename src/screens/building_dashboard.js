@@ -11,38 +11,56 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getBuildingData } from '../data/synthetic_data';
+import { fetchLatestData, fetchRecentData } from '../data/energy_data';
 
 const { width } = Dimensions.get('window');
 
 const BuildingDashboard = ({ route, navigation }) => {
-  const { buildingId, buildingName, buildingData } = route.params;
+const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route.params;
   const [activeTab, setActiveTab] = useState('realtime');
   const [currentData, setCurrentData] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const [recentData, setRecentData] = useState([]);
+  const [hourlyChart, setHourlyChart] = useState(null);
+
+  // Helper para construir la gráfica con los últimos 10 registros
+  const buildHourlyChart = (rows = []) => {
+    if (!rows.length) return null;
+    const ordered = [...rows].reverse();
+    const labels = ordered.map(r => new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    const data = ordered.map(r => parseFloat((r.V_RMSA + r.V_RMSB + r.V_RMSC).toFixed(1)));
+    return {
+      labels,
+      datasets: [
+        {
+          data,
+          color: () => '#3b82f6',
+          strokeWidth: 2,
+        },
+      ],
+    };
+  };
 
   // Obtener solo el padding superior del safe area
   const insets = useSafeAreaInsets();
 
-  // Actualizar datos cada 5 segundos para simular tiempo real
+// Actualizar datos cada 30 segundos con datos reales
   useEffect(() => {
-    const updateData = () => {
-      const newData = getBuildingData(buildingId);
-      setCurrentData(newData);
+
+    const updateData = async () => {
+      const newData = await fetchLatestData(buildingId);
+      if (newData) setCurrentData(newData);
+
+      const recent = await fetchRecentData(buildingId, 5);
+      setRecentData(recent);
+      setHourlyChart(buildHourlyChart(recent));
     };
 
     updateData();
-    const interval = setInterval(updateData, 5000);
+    const interval = setInterval(updateData, 30000);
 
     return () => clearInterval(interval);
   }, [buildingId]);
 
-  const refreshData = () => {
-    setRefreshing(true);
-    const newData = getBuildingData(buildingId);
-    setCurrentData(newData);
-    setTimeout(() => setRefreshing(false), 1000);
-  };
 
   if (!currentData) {
     return (
@@ -111,16 +129,6 @@ const BuildingDashboard = ({ route, navigation }) => {
         </LinearGradient>
       </View>
 
-      {/* Botón de actualización */}
-      <TouchableOpacity
-        style={[styles.refreshButton, refreshing && styles.refreshButtonDisabled]}
-        onPress={refreshData}
-        disabled={refreshing}
-      >
-        <Text style={styles.refreshButtonText}>
-          {refreshing ? 'Actualizando...' : 'Actualizar Datos'}
-        </Text>
-      </TouchableOpacity>
 
       {/* Datos de voltaje */}
       <View style={styles.dataCard}>
@@ -209,6 +217,18 @@ const BuildingDashboard = ({ route, navigation }) => {
           </View>
         </View>
       </View>
+
+      {/* Últimos 10 registros */}
+      <View style={styles.dataCard}>
+        <Text style={styles.cardTitle}>Últimos 10 Registros</Text>
+        {recentData.map((row, idx) => (
+          <View key={row.timestamp} style={styles.historyRow}>
+            <Text style={styles.historyIndex}>{idx + 1}.</Text>
+            <Text style={styles.historyTime}>{new Date(row.timestamp).toLocaleTimeString()}</Text>
+            <Text style={styles.historyValue}>{(row.V_RMSA + row.V_RMSB + row.V_RMSC).toFixed(1)} V</Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 
@@ -217,7 +237,7 @@ const BuildingDashboard = ({ route, navigation }) => {
       <View style={styles.chartCard}>
         <Text style={styles.cardTitle}>Consumo por Hora (kWh)</Text>
         <LineChart
-          data={currentData.chartData.hourly}
+          data={hourlyChart || currentData.chartData.hourly}
           width={width - 60}
           height={220}
           chartConfig={chartConfig}
@@ -323,6 +343,23 @@ const BuildingDashboard = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  historyRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  historyIndex: {
+    width: 20,
+    color: '#6b7280',
+  },
+  historyTime: {
+    flex: 1,
+    color: '#374151',
+  },
+  historyValue: {
+    color: '#10b981',
+    fontWeight: 'bold',
+  },
   container: {
     flex: 1,
     backgroundColor: '#93ab6bff', // Color del header para que combine
@@ -442,23 +479,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: 'white',
-  },
-  refreshButton: {
-    backgroundColor: '#aecf78ff',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  refreshButtonDisabled: {
-    backgroundColor: '#6b7280',
-    opacity: 0.7,
-  },
-  refreshButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   dataCard: {
     backgroundColor: 'white',

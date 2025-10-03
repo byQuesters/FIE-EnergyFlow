@@ -14,12 +14,17 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // import { signOut } from '../../lib/auth'; // Ya no necesario
-import { getBuildingData } from '../data/synthetic_data';
+import { fetchLatestData } from '../data/energy_data';
 
 const { width, height } = Dimensions.get('window');
 
-// Configuración de edificios del campus
+// Configuración de edificios del campus (un sensor = un edificio)
 const campusBuildingsConfig = [
+  {
+    id: 'photon-001',          // mismo valor que device_id en Supabase
+    name: 'Edificio Principal',
+    position: { x: 150, y: 200 },
+  },
   {
     id: 1,
     name: 'Edificio A - Administración',
@@ -62,17 +67,17 @@ const CampusMapScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
 
   // Función para actualizar datos de todos los edificios
-  const updateBuildingsData = () => {
-    const updatedBuildings = campusBuildingsConfig.map(building => {
-      const data = getBuildingData(building.id);
+const updateBuildingsData = async () => {
+    const updatedBuildings = await Promise.all(campusBuildingsConfig.map(async (building) => {
+      const data = await fetchLatestData(building.id);
       return {
         ...building,
-        consumption: data.consumption,
-        status: data.status,
-        color: getStatusColor(data.status),
-        realTimeData: data.realTimeData
+        consumption: data ? data.consumption : 0,
+        status: data ? data.status : 'unknown',
+        color: getStatusColor(data ? data.status : 'unknown'),
+        realTimeData: data ? data.realTimeData : null,
       };
-    });
+    }));
     setBuildingsData(updatedBuildings);
     setLastUpdate(new Date());
   };
