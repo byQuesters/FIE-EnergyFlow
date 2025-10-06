@@ -333,7 +333,7 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
       </View>
 
       {/* Contenido */}
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={{flexGrow: 1}}>
         {activeTab === 'realtime' ? renderRealTimeData() : renderHistoricalData()}
         {/* Agregar padding bottom para compensar la barra de gestos */}
         <View style={{ height: insets.bottom || 20 }} />
@@ -364,8 +364,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#93ab6bff', // Color del header para que combine
     ...(Platform.OS === 'web' && {
-      height: '100vh',
-      overflowY: 'auto',
+      minHeight: '100vh',
     }),
   },
   loading: {
@@ -450,7 +449,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafcee',
     paddingTop: 20,
     ...(Platform.OS === 'web' && {
-      overflowY: 'auto',
     }),
   },
   tabContent: {

@@ -58,6 +58,7 @@ const LoginScreen = ({ navigation }) => {
         style={styles.container}
       >
         <KeyboardAvoidingView
+          contentContainerStyle={{flexGrow: 1}}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
         >
@@ -125,8 +126,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     ...(Platform.OS === 'web' && {
-      height: '100vh',
-      overflow: 'auto',
+      minHeight: '100vh',
     }),
   },
   keyboardView: {

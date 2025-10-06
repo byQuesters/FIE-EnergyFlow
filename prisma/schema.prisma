@@ -7,16 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id             String           @id @default(uuid())
-  email          String           @unique
-  password       String
-  name           String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  ElectricalData ElectricalData[] @relation("ElectricalDataToUser")
-}
-
 model ElectricalData {
   id        Int      @id @default(autoincrement())
   timestamp DateTime @default(now())
@@ -35,5 +25,46 @@ model ElectricalData {
   PPROM_A   Float
   PPROM_B   Float
   PPROM_C   Float
-  User      User[]   @relation("ElectricalDataToUser")
+  userId    String?
+  device_id String
+
+  @@index([device_id])
+  @@index([device_id, timestamp])
+  @@index([timestamp])
+}
+
+model MonthlyElectricalData {
+  id           Int       @id @default(autoincrement())
+  year         Int
+  month        Int
+  avg_i_rmsa   Float?
+  avg_i_rmsb   Float?
+  avg_i_rmsc   Float?
+  avg_v_rmsa   Float?
+  avg_v_rmsb   Float?
+  avg_v_rmsc   Float?
+  avg_v_rmsab  Float?
+  avg_v_rmsbc  Float?
+  avg_v_rmsca  Float?
+  total_kwha   Float?
+  total_kwhb   Float?
+  total_kwhc   Float?
+  avg_pprom_a  Float?
+  avg_pprom_b  Float?
+  avg_pprom_c  Float?
+  record_count Int?
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  device_id    String?
+
+  @@unique([device_id, year, month])
+  @@index([device_id])
+}
+
+model User {
+  id        String   @id
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
 }

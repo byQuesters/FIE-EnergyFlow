@@ -158,6 +158,7 @@ const updateBuildingsData = async () => {
       </LinearGradient>
 
       <ScrollView 
+        contentContainerStyle={{flexGrow: 1}}
         style={styles.content}
         refreshControl={
           <RefreshControl
@@ -266,8 +267,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#93ab6bff', // Color del header para que combine
     ...(Platform.OS === 'web' && {
-      height: '100vh',
-      overflowY: 'auto',
+      minHeight: '100vh',
     }),
   },
   header: {
@@ -310,7 +310,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafcee',
     ...(Platform.OS === 'web' && {
-      overflowY: 'auto',
     }),
   },
   summaryContainer: {

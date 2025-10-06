@@ -9,7 +9,11 @@ import BuildingDashboard from './src/screens/building_dashboard';
 
 const Stack = createStackNavigator();
 
+import useEnableBodyScroll from './src/hooks/useEnableBodyScroll';
+
 export default function App() {
+  // Habilitar scroll en el body (web)
+  useEnableBodyScroll();
   console.log('Energy Monitor Admin Dashboard starting...');
   
   return (
