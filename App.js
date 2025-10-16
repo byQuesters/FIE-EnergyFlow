@@ -3,7 +3,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 
-// Importar las pantallas (sin LoginScreen)
+// Importar las pantallas
+import AuthScreen from './src/screens/auth_screen';
 import CampusMapScreen from './src/screens/campus_map_screen';
 import BuildingDashboard from './src/screens/building_dashboard';
 
@@ -20,11 +21,15 @@ export default function App() {
     <NavigationContainer>
       <StatusBar style="light" backgroundColor="#1e40af" />
       <Stack.Navigator 
-        initialRouteName="CampusMap"
+        initialRouteName="Auth"
         screenOptions={{
           headerShown: false,
         }}
       >
+        <Stack.Screen 
+          name="Auth" 
+          component={AuthScreen} 
+        />
         <Stack.Screen 
           name="CampusMap" 
           component={CampusMapScreen} 
