@@ -9,8 +9,10 @@
     "web": "expo start --web",
     "web:clear": "expo start --web --clear",
     "dev": "next dev",
-    "build": "next build",
-    "server": "next start"
+    "build": "prisma generate && next build",
+    "server": "next start",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate && prisma migrate deploy && next build"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

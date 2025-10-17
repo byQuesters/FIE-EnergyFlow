@@ -83,10 +83,24 @@ npm run server       # Iniciar servidor de producción
 
 Ver `.env.example` para la lista completa de variables requeridas.
 
+## 🧪 Probar la API
+
+### Thunder Client (Recomendado)
+- [Quick Start](./THUNDER_CLIENT_QUICKSTART.md) - Importa y empieza en 3 minutos
+- [Guía Completa](./THUNDER_CLIENT_GUIDE.md) - Tutorial detallado paso a paso
+
+### cURL / Terminal
+- [Ejemplos de cURL](./API_CURL_EXAMPLES.md) - Comandos para PowerShell y Bash
+
+**Archivos listos para importar:**
+- `thunder-collection.json` - Colección completa de pruebas
+- `thunder-environments.json` - Entornos pre-configurados
+
 ## 📖 Documentación
 
-- [Guía de Despliegue](./DEPLOYMENT.md)
-- [Configuración de CORS](./CORS_EXAMPLE.md)
+- [Guía de Despliegue](./DEPLOYMENT.md) - Desarrollo y producción
+- [Configuración de Vercel](./VERCEL_SETUP.md) - Variables de entorno paso a paso
+- [Configuración de CORS](./CORS_EXAMPLE.md) - CORS para Expo/React Native
 
 ## 👥 Equipo
 
