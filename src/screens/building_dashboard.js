@@ -7,11 +7,12 @@ import {
   Dimensions,
   TouchableOpacity,
   Platform,
+  Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { fetchLatestData, fetchRecentData } from '../data/energy_data';
+import { fetchLatestData, fetchRecentData, checkServerStatus } from '../data/energy_data';
 
 const { width } = Dimensions.get('window');
 
@@ -21,6 +22,8 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
   const [currentData, setCurrentData] = useState(null);
   const [recentData, setRecentData] = useState([]);
   const [hourlyChart, setHourlyChart] = useState(null);
+  const [serverStatus, setServerStatus] = useState({ isActive: true, lastUpdate: null });
+
 
   // Helper para construir la gráfica con los últimos 10 registros
   const buildHourlyChart = (rows = []) => {
@@ -43,10 +46,17 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
   // Obtener solo el padding superior del safe area
   const insets = useSafeAreaInsets();
 
-// Actualizar datos cada 30 segundos con datos reales
+  // Actualizar datos cada 30 segundos con datos reales
   useEffect(() => {
-
     const updateData = async () => {
+      // Verificar estado del servidor primero
+      const status = await checkServerStatus(buildingId);
+      setServerStatus(status);
+
+      if (!status.isActive) {
+        console.warn('⚠️ Servidor inactivo - Sin datos recientes');
+      }
+
       const newData = await fetchLatestData(buildingId);
       if (newData) setCurrentData(newData);
 
@@ -114,6 +124,22 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
 
   const renderRealTimeData = () => (
     <View style={styles.tabContent}>
+      {/* Alerta de servidor inactivo */}
+      {!serverStatus.isActive && (
+        <View style={styles.alertCard}>
+          <Text style={styles.alertTitle}>Servidor Inactivo</Text>
+          <Text style={styles.alertMessage}>
+            El servidor está apagado o se ha detenido.{'\n'}
+            Favor de reiniciarlo.
+          </Text>
+          {serverStatus.lastUpdate && (
+            <Text style={styles.alertTime}>
+              Última actualización hace {serverStatus.minutesAgo} minuto(s)
+            </Text>
+          )}
+        </View>
+      )}
+
       {/* Resumen principal */}
       <View style={styles.summaryCards}>
         <LinearGradient colors={['#abd388ff', '#83ae68ff']} style={styles.summaryCard}>
@@ -351,6 +377,35 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
 };
 
 const styles = StyleSheet.create({
+
+  // Estilos para la alerta (AGREGAR ESTOS)
+  alertCard: {
+    backgroundColor: '#fee2e2',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#ef4444',
+  },
+  alertTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#dc2626',
+    marginBottom: 8,
+  },
+  alertMessage: {
+    fontSize: 16,
+    color: '#991b1b',
+    marginBottom: 8,
+    lineHeight: 22,
+  },
+  alertTime: {
+    fontSize: 14,
+    color: '#7f1d1d',
+    fontStyle: 'italic',
+  },
+
+  // Estilos generales
   historyRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

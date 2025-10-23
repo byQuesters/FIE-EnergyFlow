@@ -48,6 +48,36 @@ export const mapRowToBuildingData = (row) => {
   };
 };
 
+// Verificar si hay datos recientes (últimos 2 minutos)
+export const checkServerStatus = async (deviceId) => {
+  const { data, error } = await supabase
+    .from('ElectricalData')
+    .select('timestamp')
+    .eq('device_id', deviceId)
+    .order('timestamp', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error checking server status:', error);
+    return { isActive: false, lastUpdate: null };
+  }
+
+  if (!data) {
+    return { isActive: false, lastUpdate: null };
+  }
+
+  const lastUpdateTime = new Date(data.timestamp);
+  const now = new Date();
+  const diffMinutes = (now - lastUpdateTime) / 1000 / 60;
+
+  return {
+    isActive: diffMinutes <= 2,
+    lastUpdate: lastUpdateTime,
+    minutesAgo: Math.floor(diffMinutes)
+  };
+};
+
 // Fetch the latest N records (default 10) for a given device_id
 export const fetchRecentData = async (deviceId, limit = 10) => {
   if (!deviceId) return [];
@@ -64,6 +94,7 @@ export const fetchRecentData = async (deviceId, limit = 10) => {
   }
   return data || [];
 };
+
 
 // Fetch latest reading for device_id (string)
 export const fetchLatestData = async (deviceId = null) => {
