@@ -11,9 +11,103 @@ import {
   ScrollView,
   ActivityIndicator,
   StyleSheet,
+  Modal,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { signInWithEmail, registerUser } from '../../lib/auth';
+
+// Componente de Alerta Personalizada
+const CustomAlert = ({ visible, type, title, message, onClose }) => {
+  const [fadeAnim] = useState(new Animated.Value(0));
+
+  React.useEffect(() => {
+    if (visible) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible]);
+
+  const getAlertStyle = () => {
+    switch (type) {
+      case 'success':
+        return {
+          backgroundColor: '#10b981',
+          icon: '✓',
+          iconBg: '#059669',
+        };
+      case 'error':
+        return {
+          backgroundColor: '#ef4444',
+          icon: '✕',
+          iconBg: '#dc2626',
+        };
+      case 'warning':
+        return {
+          backgroundColor: '#f59e0b',
+          icon: '⚠',
+          iconBg: '#d97706',
+        };
+      default:
+        return {
+          backgroundColor: '#3b82f6',
+          icon: 'ℹ',
+          iconBg: '#2563eb',
+        };
+    }
+  };
+
+  const alertStyle = getAlertStyle();
+
+  if (!visible) return null;
+
+  return (
+    <Modal transparent visible={visible} animationType="none">
+      <View style={styles.alertOverlay}>
+        <Animated.View 
+          style={[
+            styles.alertContainer,
+            { 
+              backgroundColor: alertStyle.backgroundColor,
+              opacity: fadeAnim,
+              transform: [{
+                scale: fadeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.8, 1],
+                }),
+              }],
+            }
+          ]}
+        >
+          <View style={[styles.alertIconContainer, { backgroundColor: alertStyle.iconBg }]}>
+            <Text style={styles.alertIcon}>{alertStyle.icon}</Text>
+          </View>
+          
+          <View style={styles.alertContent}>
+            <Text style={styles.alertTitle}>{title}</Text>
+            <Text style={styles.alertMessage}>{message}</Text>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.alertButton}
+            onPress={onClose}
+          >
+            <Text style={styles.alertButtonText}>Entendido</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+};
 
 const AuthScreen = ({ navigation }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,6 +118,22 @@ const AuthScreen = ({ navigation }) => {
     name: '',
   });
   const [loading, setLoading] = useState(false);
+  
+  // Estado para alertas personalizadas
+  const [alert, setAlert] = useState({
+    visible: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
+
+  const showAlert = (type, title, message) => {
+    setAlert({ visible: true, type, title, message });
+  };
+
+  const closeAlert = () => {
+    setAlert({ ...alert, visible: false });
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -33,32 +143,44 @@ const AuthScreen = ({ navigation }) => {
     const { email, password, confirmPassword, name } = formData;
 
     if (!email || !password) {
-      Alert.alert('Error', 'Por favor completa todos los campos requeridos');
+      showAlert('error', 'Campos incompletos', 'Por favor completa todos los campos requeridos');
       return false;
     }
 
-    // Validación de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Validación de email - debe ser @ucol.mx
+    const emailRegex = /^[^\s@]+@ucol\.mx$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Por favor ingresa un email válido');
+      showAlert(
+        'error',
+        'Email inválido', 
+        'El email debe ser de la Universidad de Colima (@ucol.mx)\nEjemplo: jaguilar51@ucol.mx'
+      );
       return false;
     }
 
-    // Validación de contraseña
-    if (password.length < 6) {
-      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+    // Validación de contraseña - mínimo 8 caracteres
+    if (password.length < 8) {
+      showAlert(
+        'warning',
+        'Contraseña débil', 
+        'La contraseña debe tener al menos 8 caracteres para mayor seguridad'
+      );
       return false;
     }
 
     // Validaciones específicas para registro
     if (!isLogin) {
       if (!name) {
-        Alert.alert('Error', 'Por favor ingresa tu nombre');
+        showAlert('error', 'Nombre requerido', 'Por favor ingresa tu nombre completo');
         return false;
       }
 
       if (password !== confirmPassword) {
-        Alert.alert('Error', 'Las contraseñas no coinciden');
+        showAlert(
+          'error',
+          'Contraseñas no coinciden', 
+          'Las contraseñas ingresadas no son iguales. Por favor verifica.'
+        );
         return false;
       }
     }
@@ -75,14 +197,30 @@ const AuthScreen = ({ navigation }) => {
       const { data, error } = await signInWithEmail(formData.email, formData.password);
       
       if (error) {
-        Alert.alert('Error de autenticación', error.message);
+        // Mostrar alerta específica para credenciales incorrectas
+        if (error.message.includes('Credenciales') || error.message.includes('inválidas')) {
+          showAlert(
+            'error',
+            'Credenciales incorrectas', 
+            'El email o la contraseña son incorrectos. Por favor verifica tus datos.'
+          );
+        } else {
+          showAlert('error', 'Error de autenticación', error.message);
+        }
       } else {
         console.log('Login exitoso:', data.user);
-        navigation.replace('CampusMap');
+        showAlert('success', '¡Bienvenido!', 'Has iniciado sesión correctamente');
+        setTimeout(() => {
+          navigation.replace('CampusMap');
+        }, 1500);
       }
     } catch (error) {
       console.error('Error en login:', error);
-      Alert.alert('Error', 'Algo salió mal. Inténtalo de nuevo.');
+      showAlert(
+        'error',
+        'Error de conexión', 
+        'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
+      );
     } finally {
       setLoading(false);
     }
@@ -101,25 +239,34 @@ const AuthScreen = ({ navigation }) => {
       });
       
       if (error) {
-        Alert.alert('Error de registro', error.message);
+        // Mostrar alertas específicas según el tipo de error
+        if (error.message.includes('ya está registrado') || error.message.includes('ya existe')) {
+          showAlert(
+            'warning',
+            'Email en uso', 
+            'Este email ya está registrado. Por favor inicia sesión o usa otro email.'
+          );
+        } else {
+          showAlert('error', 'Error de registro', error.message);
+        }
       } else {
-        Alert.alert(
+        showAlert(
+          'success',
           'Registro exitoso', 
-          'Tu cuenta ha sido creada. Ahora puedes iniciar sesión.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                setIsLogin(true);
-                setFormData({ email: formData.email, password: '', confirmPassword: '', name: '' });
-              }
-            }
-          ]
+          'Tu cuenta ha sido creada exitosamente. Ahora puedes iniciar sesión.'
         );
+        setTimeout(() => {
+          setIsLogin(true);
+          setFormData({ email: formData.email, password: '', confirmPassword: '', name: '' });
+        }, 2000);
       }
     } catch (error) {
       console.error('Error en registro:', error);
-      Alert.alert('Error', 'Algo salió mal. Inténtalo de nuevo.');
+      showAlert(
+        'error',
+        'Error de conexión', 
+        'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
+      );
     } finally {
       setLoading(false);
     }
@@ -267,6 +414,15 @@ const AuthScreen = ({ navigation }) => {
           </ScrollView>
         </KeyboardAvoidingView>
       </LinearGradient>
+
+      {/* Alerta Personalizada */}
+      <CustomAlert
+        visible={alert.visible}
+        type={alert.type}
+        title={alert.title}
+        message={alert.message}
+        onClose={closeAlert}
+      />
     </SafeAreaView>
   );
 };
@@ -389,6 +545,74 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     textDecorationLine: 'underline',
+  },
+  // Estilos para Alerta Personalizada
+  alertOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  alertContainer: {
+    width: '100%',
+    maxWidth: 350,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  alertIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  alertIcon: {
+    fontSize: 32,
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  alertContent: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  alertTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  alertMessage: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.95)',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  alertButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    minWidth: 140,
+  },
+  alertButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

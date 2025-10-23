@@ -26,18 +26,18 @@ export default async function handler(req, res) {
       });
     }
 
-    // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Validar formato de email - debe ser @ucol.mx
+    const emailRegex = /^[^\s@]+@ucol\.mx$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ 
-        message: 'Email inválido' 
+        message: 'El email debe ser de la Universidad de Colima (@ucol.mx)' 
       });
     }
 
-    // Validar longitud de contraseña
-    if (password.length < 6) {
+    // Validar longitud de contraseña - mínimo 8 caracteres
+    if (password.length < 8) {
       return res.status(400).json({ 
-        message: 'La contraseña debe tener al menos 6 caracteres' 
+        message: 'La contraseña debe tener al menos 8 caracteres' 
       });
     }
 
