@@ -218,13 +218,21 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
         </View>
       </View>
 
-      {/* Últimos 10 registros */}
+      {/* Últimos 5 registros */}
       <View style={styles.dataCard}>
-        <Text style={styles.cardTitle}>Últimos 10 Registros</Text>
+        <Text style={styles.cardTitle}>Últimos 5 Registros</Text>
         {recentData.map((row, idx) => (
           <View key={row.timestamp} style={styles.historyRow}>
             <Text style={styles.historyIndex}>{idx + 1}.</Text>
-            <Text style={styles.historyTime}>{new Date(row.timestamp).toLocaleTimeString()}</Text>
+            <Text style={styles.historyTime}>
+              {new Date(row.timestamp).toLocaleString('es-MX', { 
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}
+            </Text>
             <Text style={styles.historyValue}>{(row.V_RMSA + row.V_RMSB + row.V_RMSC).toFixed(1)} V</Text>
           </View>
         ))}
