@@ -61,10 +61,12 @@ model MonthlyElectricalData {
 }
 
 model User {
-  id        String   @id
-  email     String   @unique
-  password  String
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime
+  id           String    @id
+  email        String    @unique
+  password     String
+  name         String?
+  resetCode    String?
+  resetExpires DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime
 }

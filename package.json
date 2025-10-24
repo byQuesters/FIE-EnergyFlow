@@ -28,6 +28,7 @@
     "expo-status-bar": "~3.0.8",
     "nativewind": "^4.2.1",
     "next": "^15.5.5",
+    "nodemailer": "^7.0.10",
     "prisma": "^6.15.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",

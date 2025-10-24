@@ -367,6 +367,14 @@ const AuthScreen = ({ navigation }) => {
                     secureTextEntry
                     autoCapitalize="none"
                   />
+                  {isLogin && (
+                    <TouchableOpacity 
+                      onPress={() => navigation.navigate('PasswordRecovery')}
+                      style={styles.forgotPassword}
+                    >
+                      <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 {/* Campo Confirmar Contraseña (solo en registro) */}
@@ -559,6 +567,15 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     borderWidth: 1,
     borderColor: '#d1d5db',
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+  },
+  forgotPasswordText: {
+    color: '#93ab6b',
+    fontSize: 13,
+    fontWeight: '600',
   },
   button: {
     backgroundColor: '#93ab6b',
