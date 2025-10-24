@@ -855,4 +855,5 @@ const styles = StyleSheet.create({
   },
   statusText: { fontSize: 12, fontWeight: "bold" }
 
-
+});
+export default CampusMapScreen;

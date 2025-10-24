@@ -7,13 +7,12 @@ import {
   Dimensions,
   TouchableOpacity,
   Platform,
-  Alert
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { fetchLatestData, fetchRecentData } from '../data/energy_data';
+import { fetchLatestData, fetchRecentData, checkServerStatus } from '../data/energy_data';
 import { authService } from '../../lib/auth';
 
 const { width } = Dimensions.get('window');
