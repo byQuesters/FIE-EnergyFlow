@@ -12,8 +12,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-// import { signOut } from '../../lib/auth'; // Ya no necesario
 import { fetchLatestData } from '../data/energy_data';
+import { authService } from '../../lib/auth';
 
 const { width } = Dimensions.get('window');
 
@@ -60,6 +60,49 @@ const CampusMapScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const insets = useSafeAreaInsets();
+
+  // Verificar sesión al cargar el componente
+  useEffect(() => {
+    const checkAuth = async () => {
+      const isAuth = await authService.isUserAuthenticated();
+      if (!isAuth) {
+        // Si no hay sesión, redirigir al login
+        navigation.replace('Auth');
+      }
+    };
+    checkAuth();
+  }, [navigation]);
+
+  // Función para cerrar sesión
+  const handleLogout = async () => {
+    // Usar confirm nativo de JavaScript para compatibilidad con web
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('¿Estás seguro de que quieres cerrar sesión?');
+      if (confirmed) {
+        await authService.logout();
+        navigation.replace('Auth');
+      }
+    } else {
+      Alert.alert(
+        'Cerrar Sesión',
+        '¿Estás seguro de que quieres cerrar sesión?',
+        [
+          {
+            text: 'Cancelar',
+            style: 'cancel'
+          },
+          {
+            text: 'Cerrar Sesión',
+            style: 'destructive',
+            onPress: async () => {
+              await authService.logout();
+              navigation.replace('Auth');
+            }
+          }
+        ]
+      );
+    }
+  };
 
   // Función para actualizar datos de todos los edificios (SIN CAMBIOS)
   const updateBuildingsData = async () => {
@@ -150,16 +193,24 @@ const CampusMapScreen = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header (SIN CAMBIOS de funcionalidad) */}
+      {/* Header */}
       <LinearGradient colors={['#93ab6bff', '#b7c586ff']} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>ENERGY FLOW</Text>
             <Text style={styles.headerSubtitle}>Sistema de Monitoreo Energético</Text>
           </View>
-          <TouchableOpacity onPress={showSystemInfo} style={styles.infoButton}>
-            <Text style={styles.infoText}>i</Text>
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity onPress={showSystemInfo} style={styles.infoButton}>
+              <Text style={styles.infoText}>i</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <Text style={styles.logoutButtonText}>🚪</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </LinearGradient>
 
@@ -393,6 +444,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   headerLeft: { flex: 1 },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   headerTitle: { fontSize: 24, fontWeight: 'bold', color: 'white' },
   headerSubtitle: {
     fontSize: 14,
@@ -407,6 +462,20 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  logoutButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    marginLeft: 10,
+  },
+  logoutButtonText: {
+    fontSize: 20,
   },
   infoText: { fontSize: 20, color: 'white' },
   content: { flex: 1, backgroundColor: '#f8fafcee' },

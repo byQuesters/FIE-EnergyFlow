@@ -7,11 +7,13 @@ import {
   Dimensions,
   TouchableOpacity,
   Platform,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fetchLatestData, fetchRecentData } from '../data/energy_data';
+import { authService } from '../../lib/auth';
 
 const { width } = Dimensions.get('window');
 
@@ -42,6 +44,49 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
 
   // Obtener solo el padding superior del safe area
   const insets = useSafeAreaInsets();
+
+  // Verificar sesión al cargar el componente
+  useEffect(() => {
+    const checkAuth = async () => {
+      const isAuth = await authService.isUserAuthenticated();
+      if (!isAuth) {
+        // Si no hay sesión, redirigir al login
+        navigation.replace('Auth');
+      }
+    };
+    checkAuth();
+  }, [navigation]);
+
+  // Función para cerrar sesión
+  const handleLogout = async () => {
+    // Usar confirm nativo de JavaScript para compatibilidad con web
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('¿Estás seguro de que quieres cerrar sesión?');
+      if (confirmed) {
+        await authService.logout();
+        navigation.replace('Auth');
+      }
+    } else {
+      Alert.alert(
+        'Cerrar Sesión',
+        '¿Estás seguro de que quieres cerrar sesión?',
+        [
+          {
+            text: 'Cancelar',
+            style: 'cancel'
+          },
+          {
+            text: 'Cerrar Sesión',
+            style: 'destructive',
+            onPress: async () => {
+              await authService.logout();
+              navigation.replace('Auth');
+            }
+          }
+        ]
+      );
+    }
+  };
 
 // Actualizar datos cada 30 segundos con datos reales
   useEffect(() => {
@@ -306,10 +351,28 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header con información del edificio */}
       <LinearGradient colors={['#93ab6bff', '#b7c586ff']} style={styles.header}>
-        <Text style={styles.headerTitle}>{buildingName}</Text>
-        <Text style={styles.headerSubtitle}>
-          Última actualización: {new Date(currentData.realTimeData.timestamp).toLocaleTimeString()}
-        </Text>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backButtonText}>← Volver</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>{buildingName}</Text>
+            <Text style={styles.headerSubtitle}>
+              Última actualización: {new Date(currentData.realTimeData.timestamp).toLocaleTimeString()}
+            </Text>
+          </View>
+          
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Text style={styles.logoutButtonText}>🚪 Salir</Text>
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       {/* Tabs */}
@@ -380,6 +443,14 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     paddingHorizontal: 20,
   },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -389,6 +460,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 1)',
     marginTop: 4,
+    fontWeight: 'bold',
+  },
+  backButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    marginRight: 12,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  logoutButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    marginLeft: 12,
+  },
+  logoutButtonText: {
+    color: 'white',
+    fontSize: 14,
     fontWeight: 'bold',
   },
   tabsContainer: {

@@ -30,7 +30,7 @@ export default async function handler(req, res) {
     const emailRegex = /^[^\s@]+@ucol\.mx$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ 
-        message: 'El email debe ser de la Universidad de Colima (@ucol.mx)' 
+        message: 'El correo debe ser oficial de la Universidad de Colima' 
       });
     }
 

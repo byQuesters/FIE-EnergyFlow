@@ -153,7 +153,7 @@ const AuthScreen = ({ navigation }) => {
       showAlert(
         'error',
         'Email inválido', 
-        'El email debe ser de la Universidad de Colima (@ucol.mx)\nEjemplo: jaguilar51@ucol.mx'
+        'El correo debe ser oficial de la Universidad de Colima'
       );
       return false;
     }
@@ -163,7 +163,7 @@ const AuthScreen = ({ navigation }) => {
       showAlert(
         'warning',
         'Contraseña débil', 
-        'La contraseña debe tener al menos 8 caracteres para mayor seguridad'
+        'La contraseña debe tener al menos 8 caracteres'
       );
       return false;
     }
@@ -280,7 +280,7 @@ const AuthScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <LinearGradient
-        colors={['#1e40af', '#3b82f6', '#60a5fa']}
+        colors={['#6b8e4a', '#93ab6b', '#a8c48e']}
         style={styles.gradient}
       >
         <KeyboardAvoidingView
@@ -297,32 +297,34 @@ const AuthScreen = ({ navigation }) => {
                 <View style={styles.logoContainer}>
                   <Text style={styles.logoText}>⚡</Text>
                 </View>
-                <Text style={styles.title}>Energy Monitor</Text>
-                <Text style={styles.subtitle}>Sistema de Monitoreo Energético</Text>
+                <Text style={styles.title}>Energy Flow</Text>
+                <Text style={styles.subtitle}>Sistema de Monitoreo Energético de la FIE</Text>
               </View>
 
-              {/* Tabs Login/Register */}
-              <View style={styles.tabsContainer}>
-                <TouchableOpacity
-                  onPress={() => setIsLogin(true)}
-                  style={[styles.tab, isLogin && styles.tabActive]}
-                >
-                  <Text style={[styles.tabText, isLogin && styles.tabTextActive]}>
-                    Iniciar Sesión
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setIsLogin(false)}
-                  style={[styles.tab, !isLogin && styles.tabActive]}
-                >
-                  <Text style={[styles.tabText, !isLogin && styles.tabTextActive]}>
-                    Registrarse
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              {/* Formulario Centrado */}
+              <View style={styles.formCard}>
+                {/* Tabs Login/Register */}
+                <View style={styles.tabsContainer}>
+                  <TouchableOpacity
+                    onPress={() => setIsLogin(true)}
+                    style={[styles.tab, isLogin && styles.tabActive]}
+                  >
+                    <Text style={[styles.tabText, isLogin && styles.tabTextActive]}>
+                      Iniciar Sesión
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setIsLogin(false)}
+                    style={[styles.tab, !isLogin && styles.tabActive]}
+                  >
+                    <Text style={[styles.tabText, !isLogin && styles.tabTextActive]}>
+                      Registrarse
+                    </Text>
+                  </TouchableOpacity>
+                </View>
 
-              {/* Formulario */}
-              <View style={styles.form}>
+                {/* Formulario */}
+                <View style={styles.form}>
                 {/* Campo Nombre (solo en registro) */}
                 {!isLogin && (
                   <View style={styles.inputContainer}>
@@ -343,7 +345,7 @@ const AuthScreen = ({ navigation }) => {
                   <Text style={styles.label}>Email</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="ejemplo@correo.com"
+                    placeholder="ejemplo@ucol.mx"
                     placeholderTextColor="#94a3b8"
                     value={formData.email}
                     onChangeText={(value) => handleInputChange('email', value)}
@@ -397,20 +399,21 @@ const AuthScreen = ({ navigation }) => {
                     </Text>
                   )}
                 </TouchableOpacity>
-              </View>
 
-              {/* Link para cambiar de modo */}
-              <View style={styles.footer}>
-                <Text style={styles.footerText}>
-                  {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
-                </Text>
-                <TouchableOpacity onPress={toggleMode}>
-                  <Text style={styles.footerLink}>
-                    {isLogin ? 'Regístrate aquí' : 'Inicia sesión aquí'}
+                {/* Link para cambiar de modo */}
+                <View style={styles.footer}>
+                  <Text style={styles.footerText}>
+                    {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
                   </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+                  <TouchableOpacity onPress={toggleMode}>
+                    <Text style={styles.footerLink}>
+                      {isLogin ? 'Regístrate aquí' : 'Inicia sesión aquí'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                </View> {/* Cierra form */}
+              </View> {/* Cierra formCard */}
+            </View> {/* Cierra container */}
           </ScrollView>
         </KeyboardAvoidingView>
       </LinearGradient>
@@ -443,21 +446,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    alignItems: 'center',
+    paddingHorizontal: 20,
     paddingVertical: 48,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 32,
   },
   logoContainer: {
     width: 80,
     height: 80,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   logoText: {
     fontSize: 40,
@@ -467,15 +479,35 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
     marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  formCard: {
+    width: '100%',
+    maxWidth: 450,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
   },
   tabsContainer: {
     flexDirection: 'row',
-    marginBottom: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: 24,
+    backgroundColor: '#e8f0e0',
     borderRadius: 8,
     padding: 4,
   },
@@ -483,68 +515,88 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 6,
-    backgroundColor: 'transparent',
+    alignItems: 'center',
   },
   tabActive: {
-    backgroundColor: 'white',
+    backgroundColor: '#93ab6b',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   tabText: {
     textAlign: 'center',
     fontWeight: '600',
-    color: 'white',
+    fontSize: 15,
+    color: '#6b8e4a',
   },
   tabTextActive: {
-    color: '#2563eb',
+    color: 'white',
+    fontWeight: 'bold',
   },
   form: {
     width: '100%',
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   label: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    color: 'white',
+    color: '#374151',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'white',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 10,
     fontSize: 16,
     color: '#1f2937',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
   },
   button: {
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#93ab6b',
     paddingVertical: 16,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   buttonDisabled: {
-    backgroundColor: '#d97706',
+    backgroundColor: '#a8c48e',
     opacity: 0.7,
   },
   buttonText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
   },
   footer: {
-    marginTop: 32,
+    marginTop: 24,
     alignItems: 'center',
   },
   footerText: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: '#6b7280',
     marginBottom: 8,
+    fontSize: 14,
   },
   footerLink: {
-    color: 'white',
+    color: '#93ab6b',
     fontWeight: 'bold',
-    fontSize: 16,
-    textDecorationLine: 'underline',
+    fontSize: 15,
   },
   // Estilos para Alerta Personalizada
   alertOverlay: {
