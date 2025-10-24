@@ -389,7 +389,7 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.backButtonText}>← Volver</Text>
+            <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
           
           <View style={styles.headerTextContainer}>
@@ -403,7 +403,7 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
             style={styles.logoutButton}
             onPress={handleLogout}
           >
-            <Text style={styles.logoutButtonText}>🚪 Salir</Text>
+            <Text style={styles.logoutButtonText}>🚪</Text>
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: 20,
     paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
   },
   headerContent: {
     flexDirection: 'row',
@@ -517,17 +517,19 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: 'white',
+    textAlign: 'center',
   },
   headerSubtitle: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 1)',
     marginTop: 4,
     fontWeight: 'bold',
+        textAlign: 'center',
   },
   backButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.4)',
@@ -535,13 +537,13 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 25,
     fontWeight: 'bold',
   },
   logoutButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.4)',
@@ -549,17 +551,18 @@ const styles = StyleSheet.create({
   },
   logoutButtonText: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   tabsContainer: {
     flexDirection: 'row',
-    backgroundColor: 'white',
-    marginHorizontal: 0,
-    marginTop: -10,
+    backgroundColor: '#f3f3f3ff',
+    marginTop: 0,
     borderRadius: 0,
     padding: 4,
-    shadowColor: '#000',
+    paddingTop: 15,
+    paddingBottom: -10,
+    shadowColor: '#00000034',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,

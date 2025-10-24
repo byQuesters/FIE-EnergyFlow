@@ -9,11 +9,11 @@ import {
   Alert,
   RefreshControl,
   Platform,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { fetchLatestData } from '../data/energy_data';
-import { authService } from '../../lib/auth';
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { fetchLatestData } from "../data/energy_data";
+import { authService } from "../../lib/auth";
 
 const { width } = Dimensions.get("window");
 
@@ -149,7 +149,7 @@ const CampusMapScreen = ({ navigation }) => {
       const isAuth = await authService.isUserAuthenticated();
       if (!isAuth) {
         // Si no hay sesión, redirigir al login
-        navigation.replace('Auth');
+        navigation.replace("Auth");
       }
     };
     checkAuth();
@@ -158,30 +158,32 @@ const CampusMapScreen = ({ navigation }) => {
   // Función para cerrar sesión
   const handleLogout = async () => {
     // Usar confirm nativo de JavaScript para compatibilidad con web
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm('¿Estás seguro de que quieres cerrar sesión?');
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(
+        "¿Estás seguro de que quieres cerrar sesión?",
+      );
       if (confirmed) {
         await authService.logout();
-        navigation.replace('Auth');
+        navigation.replace("Auth");
       }
     } else {
       Alert.alert(
-        'Cerrar Sesión',
-        '¿Estás seguro de que quieres cerrar sesión?',
+        "Cerrar Sesión",
+        "¿Estás seguro de que quieres cerrar sesión?",
         [
           {
-            text: 'Cancelar',
-            style: 'cancel'
+            text: "Cancelar",
+            style: "cancel",
           },
           {
-            text: 'Cerrar Sesión',
-            style: 'destructive',
+            text: "Cerrar Sesión",
+            style: "destructive",
             onPress: async () => {
               await authService.logout();
-              navigation.replace('Auth');
-            }
-          }
-        ]
+              navigation.replace("Auth");
+            },
+          },
+        ],
       );
     }
   };
@@ -276,7 +278,7 @@ const CampusMapScreen = ({ navigation }) => {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <LinearGradient colors={['#93ab6bff', '#b7c586ff']} style={styles.header}>
+      <LinearGradient colors={["#93ab6bff", "#b7c586ff"]} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>ENERGY FLOW</Text>
@@ -285,10 +287,13 @@ const CampusMapScreen = ({ navigation }) => {
             </Text>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity onPress={showSystemInfo} style={styles.infoButton}>
+            <TouchableOpacity
+              onPress={showSystemInfo}
+              style={styles.infoButton}
+            >
               <Text style={styles.infoText}>i</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.logoutButton}
               onPress={handleLogout}
             >
@@ -542,10 +547,10 @@ const styles = StyleSheet.create({
   },
   headerLeft: { flex: 1 },
   headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
-  headerTitle: { fontSize: 24, fontWeight: 'bold', color: 'white' },
+  headerTitle: { fontSize: 24, fontWeight: "bold", color: "white" },
   headerSubtitle: {
     fontSize: 14,
     color: "rgba(255,255,255,0.8)",
@@ -561,21 +566,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoutButton: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: "rgba(255,255,255,0.2)",
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: "rgba(255, 255, 255, 0.4)",
     marginLeft: 10,
   },
   logoutButtonText: {
     fontSize: 20,
   },
-  infoText: { fontSize: 20, color: 'white' },
-  content: { flex: 1, backgroundColor: '#f8fafcee' },
+  infoText: { fontSize: 20, color: "white" },
+  content: { flex: 1, backgroundColor: "#f8fafcee" },
 
   /* Tarjeta resumen */
   summaryContainer: {
@@ -853,7 +858,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 4,
   },
-  statusText: { fontSize: 12, fontWeight: "bold" }
-
+  statusText: { fontSize: 12, fontWeight: "bold" },
 });
 export default CampusMapScreen;
