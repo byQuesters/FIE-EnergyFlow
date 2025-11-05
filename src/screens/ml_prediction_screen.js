@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { LinearGradient } from 'expo-linear-gradient';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '..../lib/supabase';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MLPredictionScreen = ({ navigation }) => {
