@@ -287,6 +287,13 @@ const CampusMapScreen = ({ navigation }) => {
             </Text>
           </View>
           <View style={styles.headerRight}>
+            {/* Botón ML - accesible desde header */}
+            <TouchableOpacity
+              style={styles.mlButton}
+              onPress={() => navigation.navigate('MLPredict')}
+            >
+              <Text style={styles.mlButtonText}>ML</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               onPress={showSystemInfo}
               style={styles.infoButton}
@@ -557,6 +564,30 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: "bold",
   },
+
+  /* Botón ML (liquid glass look) */
+  mlButton: {
+    backgroundColor: "rgba(16,185,129,0.14)",
+    width: 44,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "rgba(5,150,105,0.18)",
+    shadowColor: "#064e3b",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  mlButtonText: {
+    color: "#059669",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+
   infoButton: {
     backgroundColor: "rgba(255,255,255,0.2)",
     width: 40,
@@ -565,6 +596,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  infoText: { fontSize: 20, color: "white" },
   logoutButton: {
     backgroundColor: "rgba(255,255,255,0.2)",
     width: 40,
@@ -579,7 +611,7 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     fontSize: 20,
   },
-  infoText: { fontSize: 20, color: "white" },
+
   content: { flex: 1, backgroundColor: "#f8fafcee" },
 
   /* Tarjeta resumen */
@@ -860,4 +892,5 @@ const styles = StyleSheet.create({
   },
   statusText: { fontSize: 12, fontWeight: "bold" },
 });
+
 export default CampusMapScreen;
