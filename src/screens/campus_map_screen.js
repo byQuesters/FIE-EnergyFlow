@@ -208,9 +208,27 @@ const CampusMapScreen = ({ navigation }) => {
               Vista satelital (Google Maps)
             </Text>
           </View>
-          <TouchableOpacity style={styles.infoBtn} onPress={showInfo}>
-            <Text style={styles.infoTxt}>i</Text>
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            {/* Botón ML - accesible desde header */}
+            <TouchableOpacity
+              style={styles.mlButton}
+              onPress={() => navigation.navigate('MLPredict')}
+            >
+              <Text style={styles.mlButtonText}>ML</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={showSystemInfo}
+              style={styles.infoButton}
+            >
+              <Text style={styles.infoText}>i</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <Text style={styles.logoutButtonText}>🚪</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </LinearGradient>
 
@@ -320,20 +338,61 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 13,
   },
-  infoBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  infoTxt: { color: "#fff", fontSize: 18, fontWeight: "800" },
 
-  summary: {
-    backgroundColor: "#fff",
-    margin: 16,
-    padding: 16,
+  /* Botón ML (liquid glass look) */
+  mlButton: {
+    backgroundColor: "rgba(16,185,129,0.14)",
+    width: 44,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "rgba(5,150,105,0.18)",
+    shadowColor: "#064e3b",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  mlButtonText: {
+    color: "#059669",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+
+  infoButton: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  infoText: { fontSize: 20, color: "white" },
+  logoutButton: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.4)",
+    marginLeft: 10,
+  },
+  logoutButtonText: {
+    fontSize: 20,
+  },
+
+  content: { flex: 1, backgroundColor: "#f8fafcee" },
+
+  /* Tarjeta resumen */
+  summaryContainer: {
+    backgroundColor: "white",
+    margin: 20,
+    padding: 20,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#e5e7eb",

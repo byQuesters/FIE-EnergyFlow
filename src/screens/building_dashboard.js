@@ -405,6 +405,13 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
           >
             <Text style={styles.logoutButtonText}>🚪</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.mlButtonHeader}
+            onPress={() => navigation.navigate('MLPredict')}
+          >
+            <Text style={styles.mlButtonHeaderText}>ML</Text>
+          </TouchableOpacity>
         </View>
       </LinearGradient>
 
@@ -439,8 +446,7 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
 };
 
 const styles = StyleSheet.create({
-
-  // Estilos para la alerta (AGREGAR ESTOS)
+  // Estilos para la alerta
   alertCard: {
     backgroundColor: '#fee2e2',
     borderRadius: 12,
@@ -467,7 +473,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  // Estilos generales
+  // Historial
   historyRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -485,12 +491,12 @@ const styles = StyleSheet.create({
     color: '#10b981',
     fontWeight: 'bold',
   },
+
+  // Layout general
   container: {
     flex: 1,
-    backgroundColor: '#93ab6bff', // Color del header para que combine
-    ...(Platform.OS === 'web' && {
-      minHeight: '100vh',
-    }),
+    backgroundColor: '#93ab6bff',
+    ...(Platform.OS === 'web' && { minHeight: '100vh' }),
   },
   loading: {
     justifyContent: 'center',
@@ -500,6 +506,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#6b7280',
   },
+
+  // Header
   header: {
     paddingTop: 20,
     paddingBottom: 20,
@@ -512,6 +520,7 @@ const styles = StyleSheet.create({
   },
   headerTextContainer: {
     flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 24,
@@ -524,7 +533,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 1)',
     marginTop: 4,
     fontWeight: 'bold',
-        textAlign: 'center',
+    textAlign: 'center',
   },
   backButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -554,14 +563,28 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+
+  // Botón ML en header
+  mlButtonHeader: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  mlButtonHeaderText: {
+    color: '#059669',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+  // Tabs
   tabsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#f3f3f3ff',
+    backgroundColor: '#f3f3f3',
     marginTop: 0,
-    borderRadius: 0,
     padding: 4,
     paddingTop: 15,
-    paddingBottom: -10,
     shadowColor: '#00000034',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -575,29 +598,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#00000034',
-    borderStyle: 'solid',
-    transitionDuration: '500ms',
-    transitionProperty: 'background-color, color',
-    transitionTimingFunction: 'ease-in-out',
     marginHorizontal: 4,
   },
   activeTab: {
-    backgroundColor: '#a3bb7cff',
+    backgroundColor: '#a3bb7c',
     shadowColor: '#000000ff',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 3,
     elevation: 5,
     borderWidth: 0,
-    borderColor: 'black',
-    borderStyle: 'solid',
-    transitionDuration: '500ms',
-    transitionProperty: 'background-color, color',
-    transitionTimingFunction: 'ease-in-out',
-    fontWeight: 'bold',
-    border: 1,
-    borderColor: '#00000030',
-    borderWidth: 1,
   },
   tabText: {
     fontSize: 16,
@@ -608,17 +618,19 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+
+  // Contenido
   content: {
     flex: 1,
-    backgroundColor: '#f8fafcee',
+    backgroundColor: '#f8fafc',
     paddingTop: 20,
-    ...(Platform.OS === 'web' && {
-    }),
   },
   tabContent: {
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
+
+  // Summary cards
   summaryCards: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -642,6 +654,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
   },
+
+  // Data cards
   dataCard: {
     backgroundColor: 'white',
     borderRadius: 12,
@@ -652,24 +666,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    border: 1,
-    borderColor: '#00000030',
     borderWidth: 1,
-  },
-  chartCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    alignItems: 'center',
-    border: 1,
     borderColor: '#00000030',
-    borderWidth: 1,
   },
   cardTitle: {
     fontSize: 18,
@@ -677,6 +675,7 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginBottom: 15,
   },
+
   dataGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -699,8 +698,10 @@ const styles = StyleSheet.create({
   dataValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#93ab6bff',
+    color: '#93ab6b',
   },
+
+  // Summary grid
   summaryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -725,6 +726,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#059669',
   },
+
+  // Chart
   chart: {
     marginVertical: 8,
     borderRadius: 16,
