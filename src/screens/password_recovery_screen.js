@@ -17,9 +17,29 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 // Detectar URL base
 const getApiBaseUrl = () => {
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+  // Usar variable de entorno si está disponible (mismo comportamiento que en lib/auth.js)
+  const EXPO_PUBLIC_API_URL = process.env.EXPO_PUBLIC_API_URL;
+  const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  if (EXPO_PUBLIC_API_URL) {
+    return EXPO_PUBLIC_API_URL;
+  }
+
+  if (NEXT_PUBLIC_API_URL) {
+    return NEXT_PUBLIC_API_URL;
+  }
+
+  // En producción (Vercel), usar la URL del dominio actual solo si window.location existe
+  if (
+    typeof window !== 'undefined' &&
+    window.location &&
+    typeof window.location.hostname === 'string' &&
+    window.location.hostname !== 'localhost'
+  ) {
     return window.location.origin;
   }
+
+  // Fallback por defecto (producción pública)
   return 'https://fie-energy-flow.vercel.app';
 };
 
