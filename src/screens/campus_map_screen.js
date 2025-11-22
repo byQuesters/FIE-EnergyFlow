@@ -1,14 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Dimensions,
   Alert,
   RefreshControl,
+  Platform,
 } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchLatestData } from "../data/energy_data";
@@ -136,84 +137,153 @@ const campusBuildingsConfig = [
 /* ------------------------------------------------------------------------- */
 
 const CampusMapScreen = ({ navigation }) => {
-  const insets = useSafeAreaInsets();
-  const mapRef = useRef(null);
-
-  const [sensors, setSensors] = useState([]);
+  const [selectedBuilding, setSelectedBuilding] = useState(null);
+  const [buildingsData, setBuildingsData] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const insets = useSafeAreaInsets();
 
-  // Carga periódica de estado/consumo por sensor (MISMA lógica que antes)
-  const updateSensors = async () => {
-    const items = await Promise.all(
-      campusSensorsConfig.map(async (s) => {
-        const data = await fetchLatestData(s.id);
+  // Verificar sesión al cargar el componente
+  useEffect(() => {
+    const checkAuth = async () => {
+      const isAuth = await authService.isUserAuthenticated();
+      if (!isAuth) {
+        // Si no hay sesión, redirigir al login
+        navigation.replace("Auth");
+      }
+    };
+    checkAuth();
+  }, [navigation]);
+
+  // Función para cerrar sesión
+  const handleLogout = async () => {
+    // Usar confirm nativo de JavaScript para compatibilidad con web
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(
+        "¿Estás seguro de que quieres cerrar sesión?",
+      );
+      if (confirmed) {
+        await authService.logout();
+        navigation.replace("Auth");
+      }
+    } else {
+      Alert.alert(
+        "Cerrar Sesión",
+        "¿Estás seguro de que quieres cerrar sesión?",
+        [
+          {
+            text: "Cancelar",
+            style: "cancel",
+          },
+          {
+            text: "Cerrar Sesión",
+            style: "destructive",
+            onPress: async () => {
+              await authService.logout();
+              navigation.replace("Auth");
+            },
+          },
+        ],
+      );
+    }
+  };
+
+  // Función para actualizar datos de todos los edificios (SIN CAMBIOS)
+  const updateBuildingsData = async () => {
+    const updatedBuildings = await Promise.all(
+      campusBuildingsConfig.map(async (building) => {
+        const data = await fetchLatestData(building.id);
         return {
-          ...s,
+          ...building,
           consumption: data ? data.consumption : 0,
           status: data ? data.status : "unknown",
-          color: statusColor(data ? data.status : "unknown"),
+          color: getStatusColor(data ? data.status : "unknown"),
           realTimeData: data ? data.realTimeData : null,
         };
       }),
     );
-    setSensors(items);
+    setBuildingsData(updatedBuildings);
     setLastUpdate(new Date());
   };
 
+  // Actualizar datos cada 10 segundos (SIN CAMBIOS)
   useEffect(() => {
-    updateSensors();
-    const t = setInterval(updateSensors, 10000);
-    return () => clearInterval(t);
+    updateBuildingsData();
+    const interval = setInterval(updateBuildingsData, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
-    updateSensors();
-    setTimeout(() => setRefreshing(false), 800);
+    updateBuildingsData();
+    setTimeout(() => setRefreshing(false), 1000);
   };
 
-  const navigateToDashboard = (b) => {
+  const handleBuildingPress = (building) => {
+    setSelectedBuilding(building);
     navigation.navigate("BuildingDashboard", {
-      buildingId: b.id,
-      buildingName: b.name,
-      buildingData: b,
+      buildingId: building.id,
+      buildingName: building.name,
+      buildingData: building,
     });
   };
 
-  const totalKwh = useMemo(
-    () => sensors.reduce((acc, s) => acc + (s.consumption || 0), 0).toFixed(1),
-    [sensors],
-  );
-
-  const showInfo = () =>
+  // Info del sistema (SIN CAMBIOS)
+  const showSystemInfo = () => {
     Alert.alert(
-      "Monitoreo Energético",
-      `Edificios: ${sensors.length}\nConsumo total: ${totalKwh} kWh\nÚltima actualización: ${lastUpdate.toLocaleString()}`,
+      "Sistema de Monitoreo Energético",
+      `Panel de Administración\n\nMonitoreando ${buildingsData.length} edificios\nConsumo total: ${getTotalConsumption()} kWh\nÚltima actualización: ${lastUpdate.toLocaleString()}`,
       [{ text: "OK" }],
     );
+  };
 
-  // Evitar que el usuario se salga del recuadro del plano
-  const clampToBounds = (region) => {
-    const lat = Math.min(Math.max(region.latitude, BOUNDS.south), BOUNDS.north);
-    const lng = Math.min(Math.max(region.longitude, BOUNDS.west), BOUNDS.east);
-    if (lat !== region.latitude || lng !== region.longitude) {
-      mapRef.current?.animateToRegion(
-        { ...region, latitude: lat, longitude: lng },
-        120,
-      );
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "low":
+        return "#3b82f6";
+      case "normal":
+        return "#10b981";
+      case "high":
+        return "#f59e0b";
+      case "critical":
+        return "#ef4444";
+      default:
+        return "#6b7280";
     }
   };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case "low":
+        return "Bajo";
+      case "normal":
+        return "Normal";
+      case "high":
+        return "Alto";
+      case "critical":
+        return "Crítico";
+      default:
+        return "Desconocido";
+    }
+  };
+
+  const getTotalConsumption = () => {
+    return buildingsData
+      .reduce((total, building) => total + building.consumption, 0)
+      .toFixed(1);
+  };
+
+  /* ------------------------------- RENDER -------------------------------- */
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <LinearGradient colors={["#93ab6bff", "#b7c586ff"]} style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>ENERGY FLOW</Text>
             <Text style={styles.headerSubtitle}>
-              Vista satelital (Google Maps)
+              Sistema de Monitoreo Energético
             </Text>
           </View>
           <View style={styles.headerRight}>
@@ -241,110 +311,258 @@ const CampusMapScreen = ({ navigation }) => {
       </LinearGradient>
 
       <ScrollView
-        style={{ flex: 1, backgroundColor: "#f8fafcee" }}
         contentContainerStyle={{ flexGrow: 1 }}
+        style={styles.content}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#3b82f6"]}
+            tintColor={"#3b82f6"}
+          />
         }
       >
-        <View style={styles.summary}>
-          <Text style={styles.summaryTitle}>Consumo total</Text>
-          <Text style={styles.summaryValue}>{totalKwh} kWh</Text>
-          <Text style={styles.summaryHint}>
-            Área acotada al plano · {sensors.length} sensores
+        {/* Resumen (SIN CAMBIOS de funcionalidad) */}
+        <View style={styles.summaryContainer}>
+          <Text style={styles.summaryTitle}>Consumo Total del Campus</Text>
+          <Text style={styles.summaryValue}>{getTotalConsumption()} kWh</Text>
+          <Text style={styles.summarySubtitle}>
+            {buildingsData.length} edificios monitoreados
           </Text>
         </View>
 
-        {/* GOOGLE MAPS — solo marcadores (sensores) sobre la imagen satelital */}
-        <View style={styles.mapBox}>
-          <MapView
-            ref={mapRef}
-            provider={PROVIDER_GOOGLE}
-            style={StyleSheet.absoluteFill}
-            mapType="satellite" // 🔴 imagen satelital real
-            initialRegion={INITIAL_REGION}
-            onRegionChangeComplete={clampToBounds}
-            showsPointsOfInterest={false}
-            showsTraffic={false}
-            showsCompass={false}
-            toolbarEnabled={false}
-          >
-            {sensors.map((b) => (
-              <Marker
-                key={b.id}
-                coordinate={b.coord}
-                onPress={() => navigateToDashboard(b)}
-                tracksViewChanges={false}
-                anchor={{ x: 0.5, y: 1 }}
-              >
-                {/* Pin compacto de estado + etiqueta */}
-                <View style={styles.pinWrap}>
-                  <View
-                    style={[
-                      styles.pinDot,
-                      { backgroundColor: statusColor(b.status) },
-                    ]}
-                  />
-                  <View style={styles.pinCard}>
-                    <Text style={styles.pinTitle}>{b.code}</Text>
-                    <Text style={styles.pinMeta}>
-                      {statusText(b.status)} · {(b.consumption || 0).toFixed(1)}{" "}
-                      kWh
-                    </Text>
-                  </View>
-                </View>
-              </Marker>
-            ))}
-          </MapView>
-        </View>
+        {/* Mapa FIE (solo estilos/posiciones) */}
+        <View style={styles.mapContainer}>
+          <Text style={styles.mapTitle}>Mapa del Campus</Text>
 
-        {/* Lista (igual que antes, solo datos) */}
-        <View style={styles.listBox}>
-          <Text style={styles.listTitle}>Sensores del área</Text>
-          {sensors.map((b) => (
-            <TouchableOpacity
-              key={b.id}
-              style={styles.row}
-              onPress={() => navigateToDashboard(b)}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{b.name}</Text>
-                <Text style={styles.rowMeta}>
-                  {(b.consumption || 0).toFixed(1)} kWh · {statusText(b.status)}
-                </Text>
-              </View>
+          <View style={styles.mapView}>
+            {/* Fondo tipo césped */}
+            <View style={styles.mapBackground}>
+              <LinearGradient
+                colors={["#dff0c7", "#cfe6ae", "#e6f5d2"]}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              />
+
+              {/* Marcos / orilla */}
+              <View style={styles.mapBorder} />
+
+              {/* Calles principales */}
+              <View style={styles.roadVertical} />
+              <View style={styles.roadHorizontal} />
+              {/* Líneas amarillas discontinuas */}
+              <View style={styles.roadVCenter} />
+              <View style={styles.roadHCenter} />
+
+              {/* Andadores grises más claros */}
+              <View
+                style={[styles.walkway, { left: 110, top: 100, height: 210 }]}
+              />
               <View
                 style={[
-                  styles.rowDot,
-                  { backgroundColor: statusColor(b.status) },
+                  styles.walkway,
+                  { left: 580, top: 120, width: 14, height: 130 },
                 ]}
               />
+              <View
+                style={[
+                  styles.walkway,
+                  { left: 740, top: 90, width: 16, height: 240 },
+                ]}
+              />
+
+              {/* Estacionamiento (abajo-centro) */}
+              <View style={styles.parking}>
+                <View style={styles.parkingSlots} />
+              </View>
+
+              {/* Canchas (abajo-derecha) */}
+              <View style={styles.courts}>
+                <View style={styles.courtLine} />
+              </View>
+
+              {/* “Arbolitos” (ornamentales) */}
+              {[
+                { x: 90, y: 130 },
+                { x: 250, y: 70 },
+                { x: 300, y: 250 },
+                { x: 620, y: 260 },
+                { x: 720, y: 330 },
+                { x: 900, y: 90 },
+                { x: 120, y: 360 },
+                { x: 520, y: 340 },
+                { x: 250, y: 340 },
+              ].map((p, idx) => (
+                <View
+                  key={`tree-${idx}`}
+                  style={[styles.tree, { left: p.x, top: p.y }]}
+                />
+              ))}
+
+              {/* Render de edificios */}
+              {buildingsData.map((b) => {
+                const w = b.size?.w ?? 160;
+                const h = b.size?.h ?? 46;
+                const isDiamond = b.shape === "diamond";
+                const borderOnly = b.borderOnly;
+                const light = b.light;
+
+                // Estilo base de “rectángulo azul”
+                const baseStyle = [
+                  styles.building,
+                  {
+                    left: b.position.x,
+                    top: b.position.y,
+                    width: w,
+                    height: h,
+                    backgroundColor: borderOnly
+                      ? "transparent"
+                      : light
+                        ? "#8db8d6"
+                        : "#0f2d55",
+                    borderColor: borderOnly ? "#c63" : "#082743",
+                    borderWidth: borderOnly ? 3 : 3,
+                  },
+                ];
+
+                // Diamante (A1)
+                const diamondStyle = [
+                  styles.buildingDiamond,
+                  {
+                    left: (b.position.x || 0) + (w / 2 - h / 2),
+                    top: (b.position.y || 0) - (w / 2 - h / 2),
+                    width: h + 20,
+                    height: h + 20,
+                    backgroundColor: "#0f2d55",
+                    borderColor: "#082743",
+                    borderWidth: 3,
+                  },
+                ];
+
+                return (
+                  <TouchableOpacity
+                    key={b.id}
+                    activeOpacity={0.9}
+                    onPress={() => handleBuildingPress(b)}
+                    style={isDiamond ? diamondStyle : baseStyle}
+                  >
+                    {/* Sensor rojo (punto) */}
+                    <View
+                      style={[
+                        styles.sensorDot,
+                        {
+                          backgroundColor:
+                            b.status === "critical" ? "#ef4444" : "#ef4444", // siempre rojo, como en el plano
+                          top: isDiamond ? -10 : -10,
+                          left: isDiamond ? (h + 20) / 2 - 6 : w / 2 - 6,
+                        },
+                      ]}
+                    />
+
+                    {/* Etiqueta del edificio en el mapa */}
+                    <Text
+                      style={[
+                        styles.buildingLabel,
+                        light && { color: "#05243d" },
+                        borderOnly && { color: "#05243d" },
+                        isDiamond && { transform: [{ rotate: "90deg" }] }, // texto vertical similar a A1 rotado
+                      ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    >
+                      {b.code || b.name}
+                    </Text>
+
+                    {/* Consumo (se muestra pequeño bajo el código) */}
+                    {!isDiamond && (
+                      <Text style={styles.buildingConsumption}>
+                        {b.consumption} kWh
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+
+        {/* Lista de edificios (SIN CAMBIOS de funcionalidad) */}
+        <View style={styles.buildingsListContainer}>
+          <Text style={styles.buildingsListTitle}>Edificios del Campus</Text>
+          {buildingsData.map((building) => (
+            <TouchableOpacity
+              key={building.id}
+              style={styles.buildingCard}
+              onPress={() => handleBuildingPress(building)}
+            >
+              <View style={styles.buildingCardContent}>
+                <View style={styles.buildingCardLeft}>
+                  <Text style={styles.buildingCardName}>{building.name}</Text>
+                  <Text style={styles.buildingCardConsumption}>
+                    {building.consumption} kWh
+                  </Text>
+                  <Text style={styles.buildingCardTime}>
+                    Actualizado:{" "}
+                    {new Date(
+                      building.realTimeData?.timestamp || Date.now(),
+                    ).toLocaleTimeString()}
+                  </Text>
+                </View>
+                <View style={styles.buildingCardRight}>
+                  <View
+                    style={[
+                      styles.statusIndicator,
+                      { backgroundColor: getStatusColor(building.status) },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.statusText,
+                      { color: getStatusColor(building.status) },
+                    ]}
+                  >
+                    {getStatusText(building.status)}
+                  </Text>
+                </View>
+              </View>
             </TouchableOpacity>
           ))}
         </View>
 
+        {/* Padding inferior para barra de gestos */}
         <View style={{ height: insets.bottom || 20 }} />
       </ScrollView>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#93ab6bff" },
+/* --------------------------------- STYLES -------------------------------- */
 
-  header: { paddingTop: 18, paddingBottom: 14 },
-  headerRow: {
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#93ab6bff",
+    ...(Platform.OS === "web" && { minHeight: "100vh" }),
+  },
+  header: { paddingTop: 20, paddingBottom: 15 },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  headerLeft: { flex: 1 },
+  headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
   },
-  headerTitle: { color: "#fff", fontSize: 22, fontWeight: "800" },
+  headerTitle: { fontSize: 24, fontWeight: "bold", color: "white" },
   headerSubtitle: {
-    color: "rgba(255,255,255,0.9)",
-    fontWeight: "700",
-    marginTop: 2,
-    fontSize: 13,
+    fontSize: 14,
+    color: "rgba(255,255,255,0.8)",
+    marginTop: 4,
+    fontWeight: "bold",
   },
 
   /* Botón ML (liquid glass look) */
@@ -402,89 +620,277 @@ const styles = StyleSheet.create({
     margin: 20,
     padding: 20,
     borderRadius: 12,
+    alignItems: "center",
+    shadowColor: "#ab70c1ff",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 5,
+    elevation: 5,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#ab70c133",
+  },
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#374151",
+    marginBottom: 10,
+  },
+  summaryValue: { fontSize: 32, fontWeight: "bold", color: "#ab70c1ff" },
+  summarySubtitle: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginTop: 5,
+    fontWeight: "bold",
+  },
+
+  /* Contenedor del mapa */
+  mapContainer: {
+    backgroundColor: "white",
+    margin: 20,
+    marginTop: 0,
+    borderRadius: 12,
+    padding: 20,
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#00000030",
+  },
+  mapTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#374151",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  mapView: {
+    height: 480,
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  mapBackground: {
+    flex: 1,
+    position: "relative",
+    backgroundColor: "#dff0c7",
+  },
+  mapBorder: {
+    position: "absolute",
+    left: 8,
+    top: 8,
+    right: 8,
+    bottom: 8,
+    borderWidth: 2,
+    borderColor: "#2a2a2a55",
+  },
+
+  /* Calles principales */
+  roadVertical: {
+    position: "absolute",
+    right: 40,
+    top: 20,
+    bottom: 20,
+    width: 38,
+    backgroundColor: "#2e3033",
+    borderRadius: 16,
+  },
+  roadHorizontal: {
+    position: "absolute",
+    left: 200,
+    right: 160,
+    bottom: 120,
+    height: 28,
+    backgroundColor: "#2e3033",
+    borderRadius: 14,
+  },
+  roadVCenter: {
+    position: "absolute",
+    right: 58,
+    top: 28,
+    bottom: 28,
+    width: 2,
+    borderStyle: "dashed",
+    borderRightWidth: 2,
+    borderColor: "#ffd24a",
+  },
+  roadHCenter: {
+    position: "absolute",
+    left: 210,
+    right: 170,
+    bottom: 133,
+    height: 2,
+    borderStyle: "dashed",
+    borderTopWidth: 2,
+    borderColor: "#ffd24a",
+  },
+
+  /* Andadores */
+  walkway: {
+    position: "absolute",
+    width: 18,
+    backgroundColor: "#aeb4b9",
+    borderRadius: 6,
+  },
+
+  /* Estacionamiento */
+  parking: {
+    position: "absolute",
+    left: 420,
+    bottom: 70,
+    width: 190,
+    height: 80,
+    backgroundColor: "#262a2f",
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#111",
+    justifyContent: "center",
     alignItems: "center",
   },
-  summaryTitle: { fontSize: 16, fontWeight: "700", color: "#374151" },
-  summaryValue: {
-    fontSize: 28,
-    fontWeight: "900",
-    color: "#7a4fc8",
-    marginTop: 4,
-  },
-  summaryHint: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 4,
-    fontWeight: "600",
-  },
-
-  mapBox: {
-    height: 480,
-    marginHorizontal: 16,
-    borderRadius: 12,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-  },
-
-  // Pin/marker visual
-  pinWrap: { alignItems: "center" },
-  pinDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+  parkingSlots: {
+    width: "86%",
+    height: "74%",
     borderWidth: 2,
-    borderColor: "#0f172a",
-    marginBottom: 6,
+    borderColor: "#3c434a",
+    backgroundColor: "#30363c",
   },
-  pinCard: {
-    backgroundColor: "rgba(15,23,42,0.9)",
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    minWidth: 68,
+
+  /* Canchas */
+  courts: {
+    position: "absolute",
+    right: 40,
+    bottom: 40,
+    width: 210,
+    height: 110,
+    backgroundColor: "#f6a65b",
+    borderWidth: 3,
+    borderColor: "#e48f38",
   },
-  pinTitle: {
-    color: "#e5edff",
-    fontWeight: "900",
-    fontSize: 12,
-    textAlign: "center",
+  courtLine: {
+    position: "absolute",
+    left: "50%",
+    top: 0,
+    bottom: 0,
+    width: 6,
+    backgroundColor: "#ffcc7a",
   },
-  pinMeta: {
-    color: "#cbd5e1",
-    fontWeight: "700",
+
+  /* Árboles */
+  tree: {
+    position: "absolute",
+    width: 28,
+    height: 28,
+    backgroundColor: "#3e7c3e",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#245a2c",
+    opacity: 0.9,
+  },
+
+  /* Edificios */
+  building: {
+    position: "absolute",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 6,
+  },
+  buildingDiamond: {
+    position: "absolute",
+    transform: [{ rotate: "45deg" }],
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 6,
+  },
+  buildingLabel: {
+    color: "#e6eefc",
+    fontWeight: "800",
+    fontSize: 16,
+    letterSpacing: 1,
+  },
+  buildingConsumption: {
+    color: "#cdd8ea",
     fontSize: 10,
-    textAlign: "center",
+    fontWeight: "700",
     marginTop: 2,
   },
+  sensorDot: {
+    position: "absolute",
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: "#831313",
+  },
 
-  listBox: {
-    backgroundColor: "#fff",
-    margin: 16,
-    marginTop: 12,
+  /* Lista inferior */
+  buildingsListContainer: {
+    backgroundColor: "white",
+    margin: 20,
+    marginTop: 0,
     borderRadius: 12,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    padding: 12,
+    borderColor: "#00000030",
   },
-  listTitle: { fontWeight: "800", color: "#111827", marginBottom: 6 },
-  row: {
+  buildingsListTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 15,
+  },
+  buildingCard: {
+    backgroundColor: "#f8fafc",
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#00000030",
+  },
+  buildingCardContent: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    alignItems: "center",
   },
-  rowTitle: { fontWeight: "800", color: "#111827" },
-  rowMeta: { color: "#6b7280", fontWeight: "700", fontSize: 12, marginTop: 2 },
-  rowDot: { width: 12, height: 12, borderRadius: 6, marginLeft: 10 },
+  buildingCardLeft: { flex: 1 },
+  buildingCardName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#374151",
+    marginBottom: 4,
+  },
+  buildingCardConsumption: {
+    fontSize: 14,
+    color: "#6b7280",
+    fontWeight: "bold",
+  },
+  buildingCardTime: {
+    fontSize: 12,
+    color: "#9ca3af",
+    marginTop: 4,
+    fontWeight: "bold",
+  },
+  buildingCardRight: { alignItems: "center" },
+  statusIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginBottom: 4,
+  },
+  statusText: { fontSize: 12, fontWeight: "bold" },
 });
 
 export default CampusMapScreen;
