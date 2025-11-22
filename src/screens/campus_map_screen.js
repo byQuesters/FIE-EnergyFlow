@@ -20,7 +20,6 @@ import { useTheme } from "../contexts/ThemeContext";
 import SettingsModal from "../components/SettingsModal"; 
 
 const { width } = Dimensions.get("window");
-
 /* ------------------------------------------------------------------------- */
 /* Configuración de edificios del campus */
 /* ------------------------------------------------------------------------- */
@@ -47,8 +46,6 @@ const campusBuildingsConfig = [
   {
     id: 6, name: "Lab. SE (LSE)", code: "LSE", position: { x: 160, y: 180 }, size: { w: 150, h: 60 },
   },
-
-  // Nuevos (para replicar el plano FIE)
   {
     id: "b-lem", name: "Laboratorio de Electromecánica (LEM)", code: "LEM", position: { x: 300, y: 160 }, size: { w: 190, h: 46 },
   },
@@ -251,34 +248,24 @@ const CampusMapScreen = ({ navigation }) => {
 
               <View style={styles.mapBorder} />
 
-              <View style={[styles.roadVertical, theme.dark && { backgroundColor: '#374151' }]} />
-              <View style={[styles.roadHorizontal, theme.dark && { backgroundColor: '#374151' }]} />
-              
-              <View style={styles.roadVCenter} />
-              <View style={styles.roadHCenter} />
+              {/* Andadores grises más claros */}
+              <View
+                style={[styles.walkway, { left: 110, top: 100, height: 210 }]}
+              />
+              <View
+                style={[
+                  styles.walkway,
+                  { left: 580, top: 120, width: 14, height: 130 },
+                ]}
+              />
+              <View
+                style={[
+                  styles.walkway,
+                  { left: 740, top: 90, width: 16, height: 240 },
+                ]}
+              />
 
-              <View style={[styles.walkway, { left: 110, top: 100, height: 210 }, theme.dark && { backgroundColor: '#4b5563' }]} />
-              <View style={[styles.walkway, { left: 580, top: 120, width: 14, height: 130 }, theme.dark && { backgroundColor: '#4b5563' }]} />
-              <View style={[styles.walkway, { left: 740, top: 90, width: 16, height: 240 }, theme.dark && { backgroundColor: '#4b5563' }]} />
-
-              <View style={[styles.parking, theme.dark && { backgroundColor: '#1f2937', borderColor: '#000' }]}>
-                <View style={[styles.parkingSlots, theme.dark && { backgroundColor: '#374151', borderColor: '#4b5563' }]} />
-              </View>
-
-              <View style={[styles.courts, theme.dark && { borderColor: '#92400e', backgroundColor: '#b45309' }]}>
-                <View style={styles.courtLine} />
-              </View>
-
-              {/* Arbolitos */}
-              {[
-                { x: 90, y: 130 }, { x: 250, y: 70 }, { x: 300, y: 250 },
-                { x: 620, y: 260 }, { x: 720, y: 330 }, { x: 900, y: 90 },
-                { x: 120, y: 360 }, { x: 520, y: 340 }, { x: 250, y: 340 },
-              ].map((p, idx) => (
-                <View key={`tree-${idx}`} style={[styles.tree, { left: p.x, top: p.y }, theme.dark && { backgroundColor: '#166534', borderColor: '#14532d' }]} />
-              ))}
-
-              {/* Edificios */}
+              {/* Render de edificios */}
               {buildingsData.map((b) => {
                 const w = b.size?.w ?? 160;
                 const h = b.size?.h ?? 46;
@@ -533,6 +520,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 2,
     borderColor: "#ffd24a",
   },
+
+  /* Andadores */
   walkway: {
     position: "absolute",
     width: 18,
@@ -579,6 +568,8 @@ const styles = StyleSheet.create({
     borderColor: "#245a2c",
     opacity: 0.9,
   },
+
+  /* Edificios */
   building: {
     position: "absolute",
     justifyContent: "center",
