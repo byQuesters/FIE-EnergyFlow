@@ -25,17 +25,42 @@ const { width } = Dimensions.get("window");
 /* Configuración de edificios del campus */
 /* ------------------------------------------------------------------------- */
 const campusBuildingsConfig = [
-  { id: "photon-001", name: "Edificio Principal (A1)", code: "A1", position: { x: 540, y: 250 }, shape: "diamond", size: { w: 120, h: 120 } },
-  { id: 1, name: "Administración (A2)", code: "A2", position: { x: 820, y: 210 }, size: { w: 150, h: 46 } },
-  { id: 2, name: "Aulas (A3)", code: "A3", position: { x: 820, y: 300 }, size: { w: 150, h: 46 } },
-  { id: 3, name: "Laboratorios (LIC)", code: "LIC", position: { x: 510, y: 160 }, size: { w: 160, h: 46 } },
-  { id: 4, name: "Biblioteca (D)", code: "D", position: { x: 460, y: 70 }, size: { w: 180, h: 46 } },
-  { id: 5, name: "Cafetería (LM)", code: "LM", position: { x: 140, y: 290 }, size: { w: 150, h: 60 } },
-  { id: 6, name: "Gimnasio (LSE)", code: "LSE", position: { x: 160, y: 180 }, size: { w: 150, h: 60 } },
-  { id: "b-lem", name: "Laboratorio de Electromecánica (LEM)", code: "LEM", position: { x: 300, y: 160 }, size: { w: 190, h: 46 } },
-  { id: "b-le", name: "Laboratorio de Electrónica (LE)", code: "LE", position: { x: 430, y: 160 }, size: { w: 70, h: 46 } },
-  { id: "b-liot", name: "Laboratorio IoT (LIOT)", code: "LIOT", position: { x: 650, y: 160 }, size: { w: 160, h: 46 } },
-  { id: "b-se", name: "Sala de Equipos (SE)", code: "SE", position: { x: 350, y: 220 }, size: { w: 80, h: 56 }, borderOnly: true }
+  // Ids originales (conservados)
+  {
+    id: "photon-001", name: "Edificio Principal (A1)",code: "A1", position: { x: 540, y: 250 }, shape: "diamond", size: { w: 120, h: 120 },
+  },
+  {
+    id: 1, name: "Aulas (A2)",code: "A2", position: { x: 820, y: 210 }, size: { w: 150, h: 46 },
+  },
+  {
+    id: 2, name: "Aulas (A3)", code: "A3", position: { x: 820, y: 300 }, size: { w: 150, h: 46 },
+  },
+  {
+    id: 3, name: "Laboratorio IC (LIC)", code: "LIC", position: { x: 510, y: 160 }, size: { w: 160, h: 46 },
+  },
+  {
+    id: 4, name: "Dirección (D)", code: "D", position: { x: 460, y: 70 },size: { w: 180, h: 46 },
+  },
+  {
+    id: 5, name: "Lab. M (LM)", code: "LM", position: { x: 140, y: 290 }, size: { w: 150, h: 60 },
+  },
+  {
+    id: 6, name: "Lab. SE (LSE)", code: "LSE", position: { x: 160, y: 180 }, size: { w: 150, h: 60 },
+  },
+
+  // Nuevos (para replicar el plano FIE)
+  {
+    id: "b-lem", name: "Laboratorio de Electromecánica (LEM)", code: "LEM", position: { x: 300, y: 160 }, size: { w: 190, h: 46 },
+  },
+  {
+    id: "b-le", name: "Laboratorio de Electrónica (LE)", code: "LE", position: { x: 430, y: 160 }, size: { w: 70, h: 46 },
+  },
+  {
+    id: "b-liot", name: "Laboratorio IoT (LIOT)", code: "LIOT", position: { x: 650, y: 160 }, size: { w: 160, h: 46 },
+  },
+  {
+    id: "b-se", name: "Sala de Equipos (SE)", code: "SE", position: { x: 350, y: 220 }, size: { w: 80, h: 56 }, borderOnly: true,
+  }
 ];
 
 const CampusMapScreen = ({ navigation }) => {
