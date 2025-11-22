@@ -16,7 +16,6 @@ import { fetchLatestData } from "../data/energy_data";
 import { authService } from "../../lib/auth";
 
 const { width } = Dimensions.get("window");
-
 /* ------------------------------------------------------------------------- */
 /* Configuración de edificios del campus (un sensor = un edificio)
    Mantengo los ids existentes y agrego otros para cubrir el mapa FIE. 
@@ -48,8 +47,6 @@ const campusBuildingsConfig = [
   {
     id: 6, name: "Lab. SE (LSE)", code: "LSE", position: { x: 160, y: 180 }, size: { w: 150, h: 60 },
   },
-
-  // Nuevos (para replicar el plano FIE)
   {
     id: "b-lem", name: "Laboratorio de Electromecánica (LEM)", code: "LEM", position: { x: 300, y: 160 }, size: { w: 190, h: 46 },
   },
@@ -277,13 +274,6 @@ const CampusMapScreen = ({ navigation }) => {
               {/* Marcos / orilla */}
               <View style={styles.mapBorder} />
 
-              {/* Calles principales */}
-              <View style={styles.roadVertical} />
-              <View style={styles.roadHorizontal} />
-              {/* Líneas amarillas discontinuas */}
-              <View style={styles.roadVCenter} />
-              <View style={styles.roadHCenter} />
-
               {/* Andadores grises más claros */}
               <View
                 style={[styles.walkway, { left: 110, top: 100, height: 210 }]}
@@ -300,34 +290,6 @@ const CampusMapScreen = ({ navigation }) => {
                   { left: 740, top: 90, width: 16, height: 240 },
                 ]}
               />
-
-              {/* Estacionamiento (abajo-centro) */}
-              <View style={styles.parking}>
-                <View style={styles.parkingSlots} />
-              </View>
-
-              {/* Canchas (abajo-derecha) */}
-              <View style={styles.courts}>
-                <View style={styles.courtLine} />
-              </View>
-
-              {/* “Arbolitos” (ornamentales) */}
-              {[
-                { x: 90, y: 130 },
-                { x: 250, y: 70 },
-                { x: 300, y: 250 },
-                { x: 620, y: 260 },
-                { x: 720, y: 330 },
-                { x: 900, y: 90 },
-                { x: 120, y: 360 },
-                { x: 520, y: 340 },
-                { x: 250, y: 340 },
-              ].map((p, idx) => (
-                <View
-                  key={`tree-${idx}`}
-                  style={[styles.tree, { left: p.x, top: p.y }]}
-                />
-              ))}
 
               {/* Render de edificios */}
               {buildingsData.map((b) => {
@@ -614,106 +576,12 @@ const styles = StyleSheet.create({
     borderColor: "#2a2a2a55",
   },
 
-  /* Calles principales */
-  roadVertical: {
-    position: "absolute",
-    right: 40,
-    top: 20,
-    bottom: 20,
-    width: 38,
-    backgroundColor: "#2e3033",
-    borderRadius: 16,
-  },
-  roadHorizontal: {
-    position: "absolute",
-    left: 200,
-    right: 160,
-    bottom: 120,
-    height: 28,
-    backgroundColor: "#2e3033",
-    borderRadius: 14,
-  },
-  roadVCenter: {
-    position: "absolute",
-    right: 58,
-    top: 28,
-    bottom: 28,
-    width: 2,
-    borderStyle: "dashed",
-    borderRightWidth: 2,
-    borderColor: "#ffd24a",
-  },
-  roadHCenter: {
-    position: "absolute",
-    left: 210,
-    right: 170,
-    bottom: 133,
-    height: 2,
-    borderStyle: "dashed",
-    borderTopWidth: 2,
-    borderColor: "#ffd24a",
-  },
-
   /* Andadores */
   walkway: {
     position: "absolute",
     width: 18,
     backgroundColor: "#aeb4b9",
     borderRadius: 6,
-  },
-
-  /* Estacionamiento */
-  parking: {
-    position: "absolute",
-    left: 420,
-    bottom: 70,
-    width: 190,
-    height: 80,
-    backgroundColor: "#262a2f",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#111",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  parkingSlots: {
-    width: "86%",
-    height: "74%",
-    borderWidth: 2,
-    borderColor: "#3c434a",
-    backgroundColor: "#30363c",
-  },
-
-  /* Canchas */
-  courts: {
-    position: "absolute",
-    right: 40,
-    bottom: 40,
-    width: 210,
-    height: 110,
-    backgroundColor: "#f6a65b",
-    borderWidth: 3,
-    borderColor: "#e48f38",
-  },
-  courtLine: {
-    position: "absolute",
-    left: "50%",
-    top: 0,
-    bottom: 0,
-    width: 6,
-    backgroundColor: "#ffcc7a",
-  },
-
-  /* Árboles */
-  tree: {
-    position: "absolute",
-    width: 28,
-    height: 28,
-    backgroundColor: "#3e7c3e",
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#245a2c",
-    opacity: 0.9,
   },
 
   /* Edificios */
