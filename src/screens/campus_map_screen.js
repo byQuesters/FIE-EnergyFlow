@@ -9,115 +9,70 @@ import {
   Alert,
   RefreshControl,
   Platform,
+  StatusBar, 
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons"; 
 import { fetchLatestData } from "../data/energy_data";
 import { authService } from "../../lib/auth";
+import { useTheme } from "../contexts/ThemeContext"; 
+import SettingsModal from "../components/SettingsModal"; 
 
 const { width } = Dimensions.get("window");
 
 /* ------------------------------------------------------------------------- */
-/* Configuración de edificios del campus (un sensor = un edificio)
-   Mantengo los ids existentes y agrego otros para cubrir el mapa FIE. 
-   name: etiqueta visible completa en tarjetas
-   code: etiqueta corta usada sobre el edificio (A1, LSE, etc.)
-   position: coordenadas relativas dentro del contenedor del mapa (px)
-   shape: 'rect' | 'diamond' para aproximar A1 del plano
+/* Configuración de edificios del campus */
 /* ------------------------------------------------------------------------- */
 const campusBuildingsConfig = [
-  // Ids originales (conservados)
-  {
-    id: "photon-001", name: "Edificio Principal (A1)",code: "A1", position: { x: 540, y: 250 }, shape: "diamond", size: { w: 120, h: 120 },
-  },
-  {
-    id: 1, name: "Administración (A2)",code: "A2", position: { x: 820, y: 210 }, size: { w: 150, h: 46 },
-  },
-  {
-    id: 2, name: "Aulas (A3)", code: "A3", position: { x: 820, y: 300 }, size: { w: 150, h: 46 },
-  },
-  {
-    id: 3, name: "Laboratorios (LIC)", code: "LIC", position: { x: 510, y: 160 }, size: { w: 160, h: 46 },
-  },
-  {
-    id: 4, name: "Biblioteca (D)", code: "D", position: { x: 460, y: 70 },size: { w: 180, h: 46 },
-  },
-  {
-    id: 5, name: "Cafetería (LM)", code: "LM", position: { x: 140, y: 290 }, size: { w: 150, h: 60 },
-  },
-  {
-    id: 6, name: "Gimnasio (LSE)", code: "LSE", position: { x: 160, y: 180 }, size: { w: 150, h: 60 },
-  },
-
-  // Nuevos (para replicar el plano FIE)
-  {
-    id: "b-lem", name: "Laboratorio de Electromecánica (LEM)", code: "LEM", position: { x: 300, y: 160 }, size: { w: 190, h: 46 },
-  },
-  {
-    id: "b-le", name: "Laboratorio de Electrónica (LE)", code: "LE", position: { x: 430, y: 160 }, size: { w: 70, h: 46 },
-  },
-  {
-    id: "b-liot", name: "Laboratorio IoT (LIOT)", code: "LIOT", position: { x: 650, y: 160 }, size: { w: 160, h: 46 },
-  },
-  {
-    id: "b-se", name: "Sala de Equipos (SE)", code: "SE", position: { x: 350, y: 220 }, size: { w: 80, h: 56 }, borderOnly: true,
-  }
+  { id: "photon-001", name: "Edificio Principal (A1)", code: "A1", position: { x: 540, y: 250 }, shape: "diamond", size: { w: 120, h: 120 } },
+  { id: 1, name: "Administración (A2)", code: "A2", position: { x: 820, y: 210 }, size: { w: 150, h: 46 } },
+  { id: 2, name: "Aulas (A3)", code: "A3", position: { x: 820, y: 300 }, size: { w: 150, h: 46 } },
+  { id: 3, name: "Laboratorios (LIC)", code: "LIC", position: { x: 510, y: 160 }, size: { w: 160, h: 46 } },
+  { id: 4, name: "Biblioteca (D)", code: "D", position: { x: 460, y: 70 }, size: { w: 180, h: 46 } },
+  { id: 5, name: "Cafetería (LM)", code: "LM", position: { x: 140, y: 290 }, size: { w: 150, h: 60 } },
+  { id: 6, name: "Gimnasio (LSE)", code: "LSE", position: { x: 160, y: 180 }, size: { w: 150, h: 60 } },
+  { id: "b-lem", name: "Laboratorio de Electromecánica (LEM)", code: "LEM", position: { x: 300, y: 160 }, size: { w: 190, h: 46 } },
+  { id: "b-le", name: "Laboratorio de Electrónica (LE)", code: "LE", position: { x: 430, y: 160 }, size: { w: 70, h: 46 } },
+  { id: "b-liot", name: "Laboratorio IoT (LIOT)", code: "LIOT", position: { x: 650, y: 160 }, size: { w: 160, h: 46 } },
+  { id: "b-se", name: "Sala de Equipos (SE)", code: "SE", position: { x: 350, y: 220 }, size: { w: 80, h: 56 }, borderOnly: true }
 ];
 
-/* ------------------------------------------------------------------------- */
 const CampusMapScreen = ({ navigation }) => {
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [buildingsData, setBuildingsData] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(new Date());
-  const insets = useSafeAreaInsets();
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
-  // Verificar sesión al cargar el componente
+  const insets = useSafeAreaInsets();
+  
+  // Hooks del Tema
+  const { theme } = useTheme();
+  const { colors } = theme;
+
   useEffect(() => {
     const checkAuth = async () => {
       const isAuth = await authService.isUserAuthenticated();
-      if (!isAuth) {
-        // Si no hay sesión, redirigir al login
-        navigation.replace("Auth");
-      }
+      if (!isAuth) navigation.replace("Auth");
     };
     checkAuth();
   }, [navigation]);
 
-  // Función para cerrar sesión
   const handleLogout = async () => {
-    // Usar confirm nativo de JavaScript para compatibilidad con web
     if (Platform.OS === "web") {
-      const confirmed = window.confirm(
-        "¿Estás seguro de que quieres cerrar sesión?",
-      );
-      if (confirmed) {
+      if (window.confirm("¿Estás seguro de que quieres cerrar sesión?")) {
         await authService.logout();
         navigation.replace("Auth");
       }
     } else {
-      Alert.alert(
-        "Cerrar Sesión",
-        "¿Estás seguro de que quieres cerrar sesión?",
-        [
-          {
-            text: "Cancelar",
-            style: "cancel",
-          },
-          {
-            text: "Cerrar Sesión",
-            style: "destructive",
-            onPress: async () => {
-              await authService.logout();
-              navigation.replace("Auth");
-            },
-          },
-        ],
-      );
+      Alert.alert("Cerrar Sesión", "¿Estás seguro?", [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Cerrar", style: "destructive", onPress: async () => { await authService.logout(); navigation.replace("Auth"); } }
+      ]);
     }
   };
 
-  // Función para actualizar datos de todos los edificios (SIN CAMBIOS)
   const updateBuildingsData = async () => {
     const updatedBuildings = await Promise.all(
       campusBuildingsConfig.map(async (building) => {
@@ -135,7 +90,6 @@ const CampusMapScreen = ({ navigation }) => {
     setLastUpdate(new Date());
   };
 
-  // Actualizar datos cada 10 segundos (SIN CAMBIOS)
   useEffect(() => {
     updateBuildingsData();
     const interval = setInterval(updateBuildingsData, 10000);
@@ -157,57 +111,53 @@ const CampusMapScreen = ({ navigation }) => {
     });
   };
 
-  // Info del sistema (SIN CAMBIOS)
-  const showSystemInfo = () => {
-    Alert.alert(
-      "Sistema de Monitoreo Energético",
-      `Panel de Administración\n\nMonitoreando ${buildingsData.length} edificios\nConsumo total: ${getTotalConsumption()} kWh\nÚltima actualización: ${lastUpdate.toLocaleString()}`,
-      [{ text: "OK" }],
-    );
-  };
-
   const getStatusColor = (status) => {
     switch (status) {
-      case "low":
-        return "#3b82f6";
-      case "normal":
-        return "#10b981";
-      case "high":
-        return "#f59e0b";
-      case "critical":
-        return "#ef4444";
-      default:
-        return "#6b7280";
+      case "low": return "#3b82f6";
+      case "normal": return "#10b981";
+      case "high": return "#f59e0b";
+      case "critical": return "#ef4444";
+      default: return "#6b7280";
     }
   };
 
   const getStatusText = (status) => {
     switch (status) {
-      case "low":
-        return "Bajo";
-      case "normal":
-        return "Normal";
-      case "high":
-        return "Alto";
-      case "critical":
-        return "Crítico";
-      default:
-        return "Desconocido";
+      case "low": return "Bajo";
+      case "normal": return "Normal";
+      case "high": return "Alto";
+      case "critical": return "Crítico";
+      default: return "Desconocido";
     }
   };
 
   const getTotalConsumption = () => {
-    return buildingsData
-      .reduce((total, building) => total + building.consumption, 0)
-      .toFixed(1);
+    return buildingsData.reduce((total, building) => total + building.consumption, 0).toFixed(1);
   };
 
   /* ------------------------------- RENDER -------------------------------- */
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <LinearGradient colors={["#93ab6bff", "#b7c586ff"]} style={styles.header}>
+    // CORRECCIÓN 1: Quitamos paddingTop del container principal
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+      {/* Modal de Configuración */}
+      <SettingsModal 
+        visible={settingsVisible}
+        onClose={() => setSettingsVisible(false)}
+        systemInfo={{
+          buildingCount: buildingsData.length,
+          totalConsumption: getTotalConsumption(),
+          lastUpdate: lastUpdate.toLocaleString()
+        }}
+      />
+
+      {/* CORRECCIÓN 2: Header incluye el paddingTop para cubrir la barra de estado */}
+      <LinearGradient 
+        colors={colors.headerGradient} 
+        style={[styles.header, { paddingTop: insets.top + 20 }]}
+      >
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>ENERGY FLOW</Text>
@@ -216,19 +166,20 @@ const CampusMapScreen = ({ navigation }) => {
             </Text>
           </View>
           <View style={styles.headerRight}>
-            {/* Botón ML - accesible desde header */}
             <TouchableOpacity
               style={styles.mlButton}
               onPress={() => navigation.navigate('MLPredict')}
             >
               <Text style={styles.mlButtonText}>ML</Text>
             </TouchableOpacity>
+            
             <TouchableOpacity
-              onPress={showSystemInfo}
+              onPress={() => setSettingsVisible(true)}
               style={styles.infoButton}
             >
-              <Text style={styles.infoText}>i</Text>
+              <Ionicons name="settings-outline" size={24} color="white" />
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.logoutButton}
               onPress={handleLogout}
@@ -241,95 +192,68 @@ const CampusMapScreen = ({ navigation }) => {
 
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
-        style={styles.content}
+        style={[styles.content, { backgroundColor: colors.background }]} 
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#3b82f6"]}
-            tintColor={"#3b82f6"}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
           />
         }
       >
-        {/* Resumen (SIN CAMBIOS de funcionalidad) */}
-        <View style={styles.summaryContainer}>
-          <Text style={styles.summaryTitle}>Consumo Total del Campus</Text>
-          <Text style={styles.summaryValue}>{getTotalConsumption()} kWh</Text>
-          <Text style={styles.summarySubtitle}>
+        {/* Resumen */}
+        <View style={[styles.summaryContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.summaryTitle, { color: colors.text }]}>Consumo Total del Campus</Text>
+          <Text style={[styles.summaryValue, { color: colors.primary }]}>{getTotalConsumption()} kWh</Text>
+          <Text style={[styles.summarySubtitle, { color: colors.textSecondary }]}>
             {buildingsData.length} edificios monitoreados
           </Text>
         </View>
 
-        {/* Mapa FIE (solo estilos/posiciones) */}
-        <View style={styles.mapContainer}>
-          <Text style={styles.mapTitle}>Mapa del Campus</Text>
+        {/* Mapa FIE */}
+        <View style={[styles.mapContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.mapTitle, { color: colors.text }]}>Mapa del Campus</Text>
 
-          <View style={styles.mapView}>
-            {/* Fondo tipo césped */}
-            <View style={styles.mapBackground}>
+          <View style={[styles.mapView, { borderColor: theme.dark ? '#374151' : '#d1d5db' }]}>
+            <View style={[styles.mapBackground, { backgroundColor: theme.dark ? '#064e3b' : '#dff0c7' }]}> 
               <LinearGradient
-                colors={["#dff0c7", "#cfe6ae", "#e6f5d2"]}
+                colors={colors.mapBackground}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               />
 
-              {/* Marcos / orilla */}
               <View style={styles.mapBorder} />
 
-              {/* Calles principales */}
-              <View style={styles.roadVertical} />
-              <View style={styles.roadHorizontal} />
-              {/* Líneas amarillas discontinuas */}
+              <View style={[styles.roadVertical, theme.dark && { backgroundColor: '#374151' }]} />
+              <View style={[styles.roadHorizontal, theme.dark && { backgroundColor: '#374151' }]} />
+              
               <View style={styles.roadVCenter} />
               <View style={styles.roadHCenter} />
 
-              {/* Andadores grises más claros */}
-              <View
-                style={[styles.walkway, { left: 110, top: 100, height: 210 }]}
-              />
-              <View
-                style={[
-                  styles.walkway,
-                  { left: 580, top: 120, width: 14, height: 130 },
-                ]}
-              />
-              <View
-                style={[
-                  styles.walkway,
-                  { left: 740, top: 90, width: 16, height: 240 },
-                ]}
-              />
+              <View style={[styles.walkway, { left: 110, top: 100, height: 210 }, theme.dark && { backgroundColor: '#4b5563' }]} />
+              <View style={[styles.walkway, { left: 580, top: 120, width: 14, height: 130 }, theme.dark && { backgroundColor: '#4b5563' }]} />
+              <View style={[styles.walkway, { left: 740, top: 90, width: 16, height: 240 }, theme.dark && { backgroundColor: '#4b5563' }]} />
 
-              {/* Estacionamiento (abajo-centro) */}
-              <View style={styles.parking}>
-                <View style={styles.parkingSlots} />
+              <View style={[styles.parking, theme.dark && { backgroundColor: '#1f2937', borderColor: '#000' }]}>
+                <View style={[styles.parkingSlots, theme.dark && { backgroundColor: '#374151', borderColor: '#4b5563' }]} />
               </View>
 
-              {/* Canchas (abajo-derecha) */}
-              <View style={styles.courts}>
+              <View style={[styles.courts, theme.dark && { borderColor: '#92400e', backgroundColor: '#b45309' }]}>
                 <View style={styles.courtLine} />
               </View>
 
-              {/* “Arbolitos” (ornamentales) */}
+              {/* Arbolitos */}
               {[
-                { x: 90, y: 130 },
-                { x: 250, y: 70 },
-                { x: 300, y: 250 },
-                { x: 620, y: 260 },
-                { x: 720, y: 330 },
-                { x: 900, y: 90 },
-                { x: 120, y: 360 },
-                { x: 520, y: 340 },
-                { x: 250, y: 340 },
+                { x: 90, y: 130 }, { x: 250, y: 70 }, { x: 300, y: 250 },
+                { x: 620, y: 260 }, { x: 720, y: 330 }, { x: 900, y: 90 },
+                { x: 120, y: 360 }, { x: 520, y: 340 }, { x: 250, y: 340 },
               ].map((p, idx) => (
-                <View
-                  key={`tree-${idx}`}
-                  style={[styles.tree, { left: p.x, top: p.y }]}
-                />
+                <View key={`tree-${idx}`} style={[styles.tree, { left: p.x, top: p.y }, theme.dark && { backgroundColor: '#166534', borderColor: '#14532d' }]} />
               ))}
 
-              {/* Render de edificios */}
+              {/* Edificios */}
               {buildingsData.map((b) => {
                 const w = b.size?.w ?? 160;
                 const h = b.size?.h ?? 46;
@@ -337,35 +261,24 @@ const CampusMapScreen = ({ navigation }) => {
                 const borderOnly = b.borderOnly;
                 const light = b.light;
 
-                // Estilo base de “rectángulo azul”
                 const baseStyle = [
                   styles.building,
                   {
-                    left: b.position.x,
-                    top: b.position.y,
-                    width: w,
-                    height: h,
-                    backgroundColor: borderOnly
-                      ? "transparent"
-                      : light
-                        ? "#8db8d6"
-                        : "#0f2d55",
-                    borderColor: borderOnly ? "#c63" : "#082743",
-                    borderWidth: borderOnly ? 3 : 3,
+                    left: b.position.x, top: b.position.y, width: w, height: h,
+                    backgroundColor: borderOnly ? "transparent" : light ? (theme.dark ? "#475569" : "#8db8d6") : (theme.dark ? "#1e293b" : "#0f2d55"),
+                    borderColor: borderOnly ? (theme.dark ? "#fb923c" : "#c63") : "#082743",
+                    borderWidth: 3,
                   },
                 ];
 
-                // Diamante (A1)
                 const diamondStyle = [
                   styles.buildingDiamond,
                   {
                     left: (b.position.x || 0) + (w / 2 - h / 2),
                     top: (b.position.y || 0) - (w / 2 - h / 2),
-                    width: h + 20,
-                    height: h + 20,
-                    backgroundColor: "#0f2d55",
-                    borderColor: "#082743",
-                    borderWidth: 3,
+                    width: h + 20, height: h + 20,
+                    backgroundColor: theme.dark ? "#1e293b" : "#0f2d55",
+                    borderColor: "#082743", borderWidth: 3,
                   },
                 ];
 
@@ -376,36 +289,24 @@ const CampusMapScreen = ({ navigation }) => {
                     onPress={() => handleBuildingPress(b)}
                     style={isDiamond ? diamondStyle : baseStyle}
                   >
-                    {/* Sensor rojo (punto) */}
-                    <View
-                      style={[
+                    <View style={[
                         styles.sensorDot,
-                        {
-                          backgroundColor:
-                            b.status === "critical" ? "#ef4444" : "#ef4444", // siempre rojo, como en el plano
-                          top: isDiamond ? -10 : -10,
-                          left: isDiamond ? (h + 20) / 2 - 6 : w / 2 - 6,
-                        },
-                      ]}
+                        { top: -10, left: isDiamond ? (h + 20) / 2 - 6 : w / 2 - 6 },
+                      ]} 
                     />
-
-                    {/* Etiqueta del edificio en el mapa */}
                     <Text
                       style={[
                         styles.buildingLabel,
-                        light && { color: "#05243d" },
-                        borderOnly && { color: "#05243d" },
-                        isDiamond && { transform: [{ rotate: "90deg" }] }, // texto vertical similar a A1 rotado
+                        (light || borderOnly) && { color: theme.dark ? "#fff" : "#05243d" },
+                        isDiamond && { transform: [{ rotate: "90deg" }] },
                       ]}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
+                      numberOfLines={1} adjustsFontSizeToFit
                     >
                       {b.code || b.name}
                     </Text>
 
-                    {/* Consumo (se muestra pequeño bajo el código) */}
                     {!isDiamond && (
-                      <Text style={styles.buildingConsumption}>
+                      <Text style={[styles.buildingConsumption, (light || borderOnly) && { color: theme.dark ? "#e2e8f0" : "#cdd8ea" }]}>
                         {b.consumption} kWh
                       </Text>
                     )}
@@ -416,41 +317,29 @@ const CampusMapScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Lista de edificios (SIN CAMBIOS de funcionalidad) */}
-        <View style={styles.buildingsListContainer}>
-          <Text style={styles.buildingsListTitle}>Edificios del Campus</Text>
+        {/* LISTA DE EDIFICIOS */}
+        <View style={[styles.buildingsListContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.buildingsListTitle, { color: colors.text }]}>Edificios del Campus</Text>
           {buildingsData.map((building) => (
             <TouchableOpacity
               key={building.id}
-              style={styles.buildingCard}
+              style={[styles.buildingCard, { backgroundColor: theme.dark ? colors.background : '#f8fafc', borderColor: colors.border }]}
               onPress={() => handleBuildingPress(building)}
             >
               <View style={styles.buildingCardContent}>
                 <View style={styles.buildingCardLeft}>
-                  <Text style={styles.buildingCardName}>{building.name}</Text>
-                  <Text style={styles.buildingCardConsumption}>
+                  <Text style={[styles.buildingCardName, { color: colors.text }]}>{building.name}</Text>
+                  <Text style={[styles.buildingCardConsumption, { color: colors.textSecondary }]}>
                     {building.consumption} kWh
                   </Text>
-                  <Text style={styles.buildingCardTime}>
+                  <Text style={[styles.buildingCardTime, { color: colors.textSecondary }]}>
                     Actualizado:{" "}
-                    {new Date(
-                      building.realTimeData?.timestamp || Date.now(),
-                    ).toLocaleTimeString()}
+                    {new Date(building.realTimeData?.timestamp || Date.now()).toLocaleTimeString()}
                   </Text>
                 </View>
                 <View style={styles.buildingCardRight}>
-                  <View
-                    style={[
-                      styles.statusIndicator,
-                      { backgroundColor: getStatusColor(building.status) },
-                    ]}
-                  />
-                  <Text
-                    style={[
-                      styles.statusText,
-                      { color: getStatusColor(building.status) },
-                    ]}
-                  >
+                  <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(building.status) }]} />
+                  <Text style={[styles.statusText, { color: getStatusColor(building.status) }]}>
                     {getStatusText(building.status)}
                   </Text>
                 </View>
@@ -459,22 +348,20 @@ const CampusMapScreen = ({ navigation }) => {
           ))}
         </View>
 
-        {/* Padding inferior para barra de gestos */}
         <View style={{ height: insets.bottom || 20 }} />
       </ScrollView>
     </View>
   );
 };
 
-/* --------------------------------- STYLES -------------------------------- */
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#93ab6bff",
+    backgroundColor: "#93ab6bff", 
     ...(Platform.OS === "web" && { minHeight: "100vh" }),
   },
-  header: { paddingTop: 20, paddingBottom: 15 },
+  // paddingTop se maneja dinámicamente, paddingBottom fijo
+  header: { paddingBottom: 15 },
   headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -493,8 +380,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: "bold",
   },
-
-  /* Botón ML (liquid glass look) */
   mlButton: {
     backgroundColor: "rgba(16,185,129,0.14)",
     width: 44,
@@ -505,18 +390,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
     borderWidth: 1,
     borderColor: "rgba(5,150,105,0.18)",
-    shadowColor: "#064e3b",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
   },
   mlButtonText: {
-    color: "#059669",
+    color: "#059669", 
     fontWeight: "bold",
     fontSize: 16,
   },
-
   infoButton: {
     backgroundColor: "rgba(255,255,255,0.2)",
     width: 40,
@@ -524,8 +403,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.4)",
   },
-  infoText: { fontSize: 20, color: "white" },
   logoutButton: {
     backgroundColor: "rgba(255,255,255,0.2)",
     width: 40,
@@ -537,44 +417,34 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.4)",
     marginLeft: 10,
   },
-  logoutButtonText: {
-    fontSize: 20,
-  },
-
-  content: { flex: 1, backgroundColor: "#f8fafcee" },
-
-  /* Tarjeta resumen */
+  logoutButtonText: { fontSize: 20 },
+  content: { flex: 1 },
+  
   summaryContainer: {
-    backgroundColor: "white",
     margin: 20,
     padding: 20,
     borderRadius: 12,
     alignItems: "center",
     shadowColor: "#ab70c1ff",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
+    shadowOpacity: 0.5,
     shadowRadius: 5,
     elevation: 5,
     borderWidth: 1,
-    borderColor: "#ab70c133",
   },
   summaryTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#374151",
     marginBottom: 10,
   },
-  summaryValue: { fontSize: 32, fontWeight: "bold", color: "#ab70c1ff" },
+  summaryValue: { fontSize: 32, fontWeight: "bold" },
   summarySubtitle: {
     fontSize: 14,
-    color: "#6b7280",
     marginTop: 5,
     fontWeight: "bold",
   },
 
-  /* Contenedor del mapa */
   mapContainer: {
-    backgroundColor: "white",
     margin: 20,
     marginTop: 0,
     borderRadius: 12,
@@ -585,12 +455,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     borderWidth: 1,
-    borderColor: "#00000030",
   },
   mapTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#374151",
     marginBottom: 15,
     textAlign: "center",
   },
@@ -598,46 +466,35 @@ const styles = StyleSheet.create({
     height: 480,
     borderRadius: 10,
     overflow: "hidden",
+    borderWidth: 1,
   },
   mapBackground: {
     flex: 1,
     position: "relative",
-    backgroundColor: "#dff0c7",
   },
   mapBorder: {
     position: "absolute",
-    left: 8,
-    top: 8,
-    right: 8,
-    bottom: 8,
+    left: 8, top: 8, right: 8, bottom: 8,
     borderWidth: 2,
     borderColor: "#2a2a2a55",
   },
-
-  /* Calles principales */
   roadVertical: {
     position: "absolute",
-    right: 40,
-    top: 20,
-    bottom: 20,
+    right: 40, top: 20, bottom: 20,
     width: 38,
     backgroundColor: "#2e3033",
     borderRadius: 16,
   },
   roadHorizontal: {
     position: "absolute",
-    left: 200,
-    right: 160,
-    bottom: 120,
+    left: 200, right: 160, bottom: 120,
     height: 28,
     backgroundColor: "#2e3033",
     borderRadius: 14,
   },
   roadVCenter: {
     position: "absolute",
-    right: 58,
-    top: 28,
-    bottom: 28,
+    right: 58, top: 28, bottom: 28,
     width: 2,
     borderStyle: "dashed",
     borderRightWidth: 2,
@@ -645,30 +502,22 @@ const styles = StyleSheet.create({
   },
   roadHCenter: {
     position: "absolute",
-    left: 210,
-    right: 170,
-    bottom: 133,
+    left: 210, right: 170, bottom: 133,
     height: 2,
     borderStyle: "dashed",
     borderTopWidth: 2,
     borderColor: "#ffd24a",
   },
-
-  /* Andadores */
   walkway: {
     position: "absolute",
     width: 18,
     backgroundColor: "#aeb4b9",
     borderRadius: 6,
   },
-
-  /* Estacionamiento */
   parking: {
     position: "absolute",
-    left: 420,
-    bottom: 70,
-    width: 190,
-    height: 80,
+    left: 420, bottom: 70,
+    width: 190, height: 80,
     backgroundColor: "#262a2f",
     borderRadius: 8,
     borderWidth: 2,
@@ -677,46 +526,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   parkingSlots: {
-    width: "86%",
-    height: "74%",
+    width: "86%", height: "74%",
     borderWidth: 2,
     borderColor: "#3c434a",
     backgroundColor: "#30363c",
   },
-
-  /* Canchas */
   courts: {
     position: "absolute",
-    right: 40,
-    bottom: 40,
-    width: 210,
-    height: 110,
+    right: 40, bottom: 40,
+    width: 210, height: 110,
     backgroundColor: "#f6a65b",
     borderWidth: 3,
     borderColor: "#e48f38",
   },
   courtLine: {
     position: "absolute",
-    left: "50%",
-    top: 0,
-    bottom: 0,
+    left: "50%", top: 0, bottom: 0,
     width: 6,
     backgroundColor: "#ffcc7a",
   },
-
-  /* Árboles */
   tree: {
     position: "absolute",
-    width: 28,
-    height: 28,
+    width: 28, height: 28,
     backgroundColor: "#3e7c3e",
     borderRadius: 16,
     borderWidth: 2,
     borderColor: "#245a2c",
     opacity: 0.9,
   },
-
-  /* Edificios */
   building: {
     position: "absolute",
     justifyContent: "center",
@@ -753,16 +590,13 @@ const styles = StyleSheet.create({
   },
   sensorDot: {
     position: "absolute",
-    width: 12,
-    height: 12,
+    width: 12, height: 12,
     borderRadius: 6,
+    backgroundColor: "#ef4444",
     borderWidth: 2,
     borderColor: "#831313",
   },
-
-  /* Lista inferior */
   buildingsListContainer: {
-    backgroundColor: "white",
     margin: 20,
     marginTop: 0,
     borderRadius: 12,
@@ -773,21 +607,17 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     borderWidth: 1,
-    borderColor: "#00000030",
   },
   buildingsListTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#374151",
     marginBottom: 15,
   },
   buildingCard: {
-    backgroundColor: "#f8fafc",
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#00000030",
   },
   buildingCardContent: {
     flexDirection: "row",
@@ -798,24 +628,20 @@ const styles = StyleSheet.create({
   buildingCardName: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#374151",
     marginBottom: 4,
   },
   buildingCardConsumption: {
     fontSize: 14,
-    color: "#6b7280",
     fontWeight: "bold",
   },
   buildingCardTime: {
     fontSize: 12,
-    color: "#9ca3af",
     marginTop: 4,
     fontWeight: "bold",
   },
   buildingCardRight: { alignItems: "center" },
   statusIndicator: {
-    width: 12,
-    height: 12,
+    width: 12, height: 12,
     borderRadius: 6,
     marginBottom: 4,
   },

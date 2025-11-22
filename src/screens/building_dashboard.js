@@ -8,25 +8,39 @@ import {
   TouchableOpacity,
   Platform,
   Alert,
+  StatusBar, 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons'; 
 import { fetchLatestData, fetchRecentData, checkServerStatus } from '../data/energy_data';
 import { authService } from '../../lib/auth';
+import { useTheme } from '../contexts/ThemeContext';
+import SettingsModal from '../components/SettingsModal';
 
 const { width } = Dimensions.get('window');
 
 const BuildingDashboard = ({ route, navigation }) => {
-const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route.params;
+  const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route.params;
   const [activeTab, setActiveTab] = useState('realtime');
   const [currentData, setCurrentData] = useState(null);
   const [recentData, setRecentData] = useState([]);
   const [hourlyChart, setHourlyChart] = useState(null);
   const [serverStatus, setServerStatus] = useState({ isActive: true, lastUpdate: null });
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
+  // Hook de Tema
+  const { theme } = useTheme();
+  const { colors } = theme;
 
-  // Helper para construir la gráfica con los últimos 10 registros
+  // Reconstruir dataset de gráfica cuando cambien los datos O los colores
+  useEffect(() => {
+    if (recentData.length > 0) {
+      setHourlyChart(buildHourlyChart(recentData));
+    }
+  }, [colors, recentData]); 
+
   const buildHourlyChart = (rows = []) => {
     if (!rows.length) return null;
     const ordered = [...rows].reverse();
@@ -37,31 +51,27 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
       datasets: [
         {
           data,
-          color: () => '#3b82f6',
+          // Color de la línea de datos
+          color: () => colors.chartLine || (theme.dark ? '#60a5fa' : '#3b82f6'),
           strokeWidth: 2,
         },
       ],
     };
   };
 
-  // Obtener solo el padding superior del safe area
   const insets = useSafeAreaInsets();
 
-  // Verificar sesión al cargar el componente
   useEffect(() => {
     const checkAuth = async () => {
       const isAuth = await authService.isUserAuthenticated();
       if (!isAuth) {
-        // Si no hay sesión, redirigir al login
         navigation.replace('Auth');
       }
     };
     checkAuth();
   }, [navigation]);
 
-  // Función para cerrar sesión
   const handleLogout = async () => {
-    // Usar confirm nativo de JavaScript para compatibilidad con web
     if (Platform.OS === 'web') {
       const confirmed = window.confirm('¿Estás seguro de que quieres cerrar sesión?');
       if (confirmed) {
@@ -73,10 +83,7 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
         'Cerrar Sesión',
         '¿Estás seguro de que quieres cerrar sesión?',
         [
-          {
-            text: 'Cancelar',
-            style: 'cancel'
-          },
+          { text: 'Cancelar', style: 'cancel' },
           {
             text: 'Cerrar Sesión',
             style: 'destructive',
@@ -90,10 +97,8 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
     }
   };
 
-// Actualizar datos cada 30 segundos con datos reales
   useEffect(() => {
     const updateData = async () => {
-      // Verificar estado del servidor primero
       const status = await checkServerStatus(buildingId);
       setServerStatus(status);
 
@@ -106,7 +111,6 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
 
       const recent = await fetchRecentData(buildingId, 5);
       setRecentData(recent);
-      setHourlyChart(buildHourlyChart(recent));
     };
 
     updateData();
@@ -115,34 +119,40 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
     return () => clearInterval(interval);
   }, [buildingId]);
 
-
   if (!currentData) {
     return (
-      <View style={[styles.container, styles.loading, { paddingTop: insets.top }]}>
-        <Text style={styles.loadingText}>Cargando datos...</Text>
+      <View style={[styles.container, styles.loading, { backgroundColor: colors.background }]}>
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Cargando datos...</Text>
       </View>
     );
   }
 
+  // Determinamos el color de fondo con fallback a colors.card si chartBackground falla
+  const bgColor = colors.chartBackground || colors.card || (theme.dark ? '#1f2937' : '#ffffff');
+
   const chartConfig = {
-    backgroundColor: '#ffffff',
-    backgroundGradientFrom: '#ffffff',
-    backgroundGradientTo: '#ffffff',
+    backgroundColor: bgColor,
+    backgroundGradientFrom: bgColor,
+    backgroundGradientTo: bgColor,
     decimalPlaces: 1,
-    color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(55, 65, 81, ${opacity})`,
-    style: {
-      borderRadius: 16
+    // Color base (afecta gradientes bajo la línea y otros elementos)
+    color: (opacity = 1) => `rgba(${theme.dark ? '96, 165, 250' : '59, 130, 246'}, ${opacity})`,
+    // Color de las etiquetas (Ejes X e Y)
+    labelColor: (opacity = 1) => {
+       if (theme.dark) return `rgba(229, 231, 235, ${opacity})`; // Gris muy claro para oscuro
+       return `rgba(55, 65, 81, ${opacity})`; // Gris oscuro para claro
     },
+    style: { borderRadius: 16 },
     propsForDots: {
       r: '4',
       strokeWidth: '2',
-      stroke: '#3b82f6'
+      stroke: colors.chartLine || (theme.dark ? '#60a5fa' : '#3b82f6')
     }
   };
 
   const barChartConfig = {
     ...chartConfig,
+    // Sobrescribimos el color principal para las barras (Verde)
     color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
   };
 
@@ -168,7 +178,6 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
 
   const renderRealTimeData = () => (
     <View style={styles.tabContent}>
-      {/* Alerta de servidor inactivo */}
       {!serverStatus.isActive && (
         <View style={styles.alertCard}>
           <Text style={styles.alertTitle}>Servidor Inactivo</Text>
@@ -184,9 +193,8 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
         </View>
       )}
 
-      {/* Resumen principal */}
       <View style={styles.summaryCards}>
-        <LinearGradient colors={['#abd388ff', '#83ae68ff']} style={styles.summaryCard}>
+        <LinearGradient colors={colors.summaryGradient || ['#abd388ff', '#83ae68ff']} style={styles.summaryCard}>
           <Text style={styles.summaryCardTitle}>Consumo Total</Text>
           <Text style={styles.summaryCardValue}>{currentData.consumption} kWh</Text>
         </LinearGradient>
@@ -199,108 +207,81 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
         </LinearGradient>
       </View>
 
-
-      {/* Datos de voltaje */}
-      <View style={styles.dataCard}>
-        <Text style={styles.cardTitle}>Voltajes RMS (V)</Text>
+      <View style={[styles.dataCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>Voltajes RMS (V)</Text>
         <View style={styles.dataGrid}>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>V RMS A</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.V_RMSA}</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>V RMS B</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.V_RMSB}</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>V RMS C</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.V_RMSC}</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>V RMS AB</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.V_RMSAB}</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>V RMS BC</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.V_RMSBC}</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>V RMS CA</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.V_RMSCA}</Text>
-          </View>
+          {[
+            { l: 'V RMS A', v: currentData.realTimeData.V_RMSA },
+            { l: 'V RMS B', v: currentData.realTimeData.V_RMSB },
+            { l: 'V RMS C', v: currentData.realTimeData.V_RMSC },
+            { l: 'V RMS AB', v: currentData.realTimeData.V_RMSAB },
+            { l: 'V RMS BC', v: currentData.realTimeData.V_RMSBC },
+            { l: 'V RMS CA', v: currentData.realTimeData.V_RMSCA }
+          ].map((item, i) => (
+            <View key={i} style={[styles.dataItem, { backgroundColor: theme.dark ? colors.background : '#f8fafc' }]}>
+              <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>{item.l}</Text>
+              <Text style={[styles.dataValue, { color: colors.primary }]}>{item.v}</Text>
+            </View>
+          ))}
         </View>
       </View>
 
-      {/* Datos de corriente */}
-      <View style={styles.dataCard}>
-        <Text style={styles.cardTitle}>Corrientes RMS (A)</Text>
+      <View style={[styles.dataCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>Corrientes RMS (A)</Text>
         <View style={styles.dataGrid}>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>I RMS A</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.I_RMSA}</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>I RMS B</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.I_RMSB}</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>I RMS C</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.I_RMSC}</Text>
-          </View>
+          {[
+            { l: 'I RMS A', v: currentData.realTimeData.I_RMSA },
+            { l: 'I RMS B', v: currentData.realTimeData.I_RMSB },
+            { l: 'I RMS C', v: currentData.realTimeData.I_RMSC }
+          ].map((item, i) => (
+            <View key={i} style={[styles.dataItem, { backgroundColor: theme.dark ? colors.background : '#f8fafc' }]}>
+              <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>{item.l}</Text>
+              <Text style={[styles.dataValue, { color: colors.primary }]}>{item.v}</Text>
+            </View>
+          ))}
         </View>
       </View>
 
-      {/* Datos de potencia */}
-      <View style={styles.dataCard}>
-        <Text style={styles.cardTitle}>Potencia Promedio (kW)</Text>
+      <View style={[styles.dataCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>Potencia Promedio (kW)</Text>
         <View style={styles.dataGrid}>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>P PROM A</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.PPROM_A}</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>P PROM B</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.PPROM_B}</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>P PROM C</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.PPROM_C}</Text>
-          </View>
+           {[
+            { l: 'P PROM A', v: currentData.realTimeData.PPROM_A },
+            { l: 'P PROM B', v: currentData.realTimeData.PPROM_B },
+            { l: 'P PROM C', v: currentData.realTimeData.PPROM_C }
+          ].map((item, i) => (
+            <View key={i} style={[styles.dataItem, { backgroundColor: theme.dark ? colors.background : '#f8fafc' }]}>
+              <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>{item.l}</Text>
+              <Text style={[styles.dataValue, { color: colors.primary }]}>{item.v}</Text>
+            </View>
+          ))}
         </View>
       </View>
 
-      {/* Datos de energía */}
-      <View style={styles.dataCard}>
-        <Text style={styles.cardTitle}>Energía (kWh)</Text>
+      <View style={[styles.dataCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>Energía (kWh)</Text>
         <View style={styles.dataGrid}>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>kWh A</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.kWhA}</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>kWh B</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.kWhB}</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>kWh C</Text>
-            <Text style={styles.dataValue}>{currentData.realTimeData.kWhC}</Text>
-          </View>
+           {[
+            { l: 'kWh A', v: currentData.realTimeData.kWhA },
+            { l: 'kWh B', v: currentData.realTimeData.kWhB },
+            { l: 'kWh C', v: currentData.realTimeData.kWhC }
+          ].map((item, i) => (
+            <View key={i} style={[styles.dataItem, { backgroundColor: theme.dark ? colors.background : '#f8fafc' }]}>
+              <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>{item.l}</Text>
+              <Text style={[styles.dataValue, { color: colors.primary }]}>{item.v}</Text>
+            </View>
+          ))}
         </View>
       </View>
 
-      {/* Últimos 5 registros */}
-      <View style={styles.dataCard}>
-        <Text style={styles.cardTitle}>Últimos 5 Registros</Text>
+      <View style={[styles.dataCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>Últimos 5 Registros</Text>
         {recentData.map((row, idx) => (
           <View key={row.timestamp} style={styles.historyRow}>
-            <Text style={styles.historyIndex}>{idx + 1}.</Text>
-            <Text style={styles.historyTime}>
+            <Text style={[styles.historyIndex, { color: colors.textSecondary }]}>{idx + 1}.</Text>
+            <Text style={[styles.historyTime, { color: colors.text }]}>
               {new Date(row.timestamp).toLocaleString('es-MX', { 
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit', 
-                minute: '2-digit' 
+                year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' 
               })}
             </Text>
             <Text style={styles.historyValue}>{(row.V_RMSA + row.V_RMSB + row.V_RMSC).toFixed(1)} V</Text>
@@ -312,9 +293,11 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
 
   const renderHistoricalData = () => (
     <View style={styles.tabContent}>
-      <View style={styles.chartCard}>
-        <Text style={styles.cardTitle}>Consumo por Hora (kWh)</Text>
+      <View style={[styles.chartCard, { backgroundColor: colors.card }]}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>Consumo por Hora (kWh)</Text>
+        {/* AGREGAMOS KEY PARA FORZAR RE-RENDER AL CAMBIAR DE TEMA */}
         <LineChart
+          key={theme.dark ? 'dark-line-chart' : 'light-line-chart'}
           data={hourlyChart || currentData.chartData.hourly}
           width={width - 60}
           height={220}
@@ -324,9 +307,11 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
         />
       </View>
 
-      <View style={styles.chartCard}>
-        <Text style={styles.cardTitle}>Distribución por Fase (%)</Text>
+      <View style={[styles.chartCard, { backgroundColor: colors.card }]}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>Distribución por Fase (%)</Text>
+        {/* AGREGAMOS KEY PARA FORZAR RE-RENDER AL CAMBIAR DE TEMA */}
         <BarChart
+          key={theme.dark ? 'dark-bar-chart' : 'light-bar-chart'}
           data={currentData.chartData.phases}
           width={width - 60}
           height={220}
@@ -335,58 +320,42 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
         />
       </View>
 
-      {/* Información adicional */}
-      <View style={styles.dataCard}>
-        <Text style={styles.cardTitle}>Resumen del Día</Text>
+      <View style={[styles.dataCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>Resumen del Día</Text>
         <View style={styles.summaryGrid}>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryItemLabel}>Consumo Máximo</Text>
-            <Text style={styles.summaryItemValue}>
-              {Math.max(
-                currentData.realTimeData.kWhA,
-                currentData.realTimeData.kWhB,
-                currentData.realTimeData.kWhC
-              ).toFixed(1)} kWh
-            </Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryItemLabel}>Consumo Mínimo</Text>
-            <Text style={styles.summaryItemValue}>
-              {Math.min(
-                currentData.realTimeData.kWhA,
-                currentData.realTimeData.kWhB,
-                currentData.realTimeData.kWhC
-              ).toFixed(1)} kWh
-            </Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryItemLabel}>Promedio</Text>
-            <Text style={styles.summaryItemValue}>
-              {((currentData.realTimeData.kWhA + 
-                 currentData.realTimeData.kWhB + 
-                 currentData.realTimeData.kWhC) / 3).toFixed(1)} kWh
-            </Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryItemLabel}>Eficiencia</Text>
-            <Text style={styles.summaryItemValue}>
-              {currentData.status === 'low' ? '95%' :
-               currentData.status === 'normal' ? '88%' :
-               currentData.status === 'high' ? '75%' : '62%'}
-            </Text>
-          </View>
+          {[
+            { label: 'Consumo Máximo', value: `${Math.max(currentData.realTimeData.kWhA, currentData.realTimeData.kWhB, currentData.realTimeData.kWhC).toFixed(1)} kWh` },
+            { label: 'Consumo Mínimo', value: `${Math.min(currentData.realTimeData.kWhA, currentData.realTimeData.kWhB, currentData.realTimeData.kWhC).toFixed(1)} kWh` },
+            { label: 'Promedio', value: `${((currentData.realTimeData.kWhA + currentData.realTimeData.kWhB + currentData.realTimeData.kWhC) / 3).toFixed(1)} kWh` },
+            { label: 'Eficiencia', value: currentData.status === 'low' ? '95%' : currentData.status === 'normal' ? '88%' : currentData.status === 'high' ? '75%' : '62%' }
+          ].map((item, i) => (
+            <View key={i} style={[styles.summaryItem, { backgroundColor: theme.dark ? colors.background : '#f8fafc' }]}>
+              <Text style={[styles.summaryItemLabel, { color: colors.textSecondary }]}>{item.label}</Text>
+              <Text style={[styles.summaryItemValue, { color: colors.primary }]}>{item.value}</Text>
+            </View>
+          ))}
         </View>
       </View>
     </View>
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header con información del edificio */}
-      <LinearGradient colors={['#93ab6bff', '#b7c586ff']} style={styles.header}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+      <SettingsModal 
+        visible={settingsVisible}
+        onClose={() => setSettingsVisible(false)}
+        systemInfo={null} 
+      />
+
+      <LinearGradient 
+        colors={colors.headerGradient} 
+        style={[styles.header, { paddingTop: insets.top + 20 }]}
+      >
         <View style={styles.headerContent}>
           <TouchableOpacity 
-            style={styles.backButton}
+            style={[styles.backButton, { borderColor: 'rgba(255,255,255,0.4)' }]}
             onPress={() => navigation.goBack()}
           >
             <Text style={styles.backButtonText}>←</Text>
@@ -398,47 +367,69 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
               Última actualización: {new Date(currentData.realTimeData.timestamp).toLocaleTimeString()}
             </Text>
           </View>
-          
-          <TouchableOpacity 
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
-            <Text style={styles.logoutButtonText}>🚪</Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.mlButtonHeader}
-            onPress={() => navigation.navigate('MLPredict')}
-          >
-            <Text style={styles.mlButtonHeaderText}>ML</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity
+              style={styles.mlButtonHeader}
+              onPress={() => navigation.navigate('MLPredict')}
+            >
+              <Text style={styles.mlButtonHeaderText}>ML</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setSettingsVisible(true)}
+              style={styles.settingsButtonHeader}
+            >
+              <Ionicons name="settings-outline" size={24} color="white" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <Text style={styles.logoutButtonText}>🚪</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </LinearGradient>
 
-      {/* Tabs */}
-      <View style={styles.tabsContainer}>
+      <View style={[styles.tabsContainer, { backgroundColor: colors.inactiveTab }]}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'realtime' && styles.activeTab]}
+          style={[
+            styles.tab, 
+            { borderColor: colors.border },
+            activeTab === 'realtime' && { backgroundColor: colors.activeTab, borderWidth: 0 }
+          ]}
           onPress={() => setActiveTab('realtime')}
         >
-          <Text style={[styles.tabText, activeTab === 'realtime' && styles.activeTabText]}>
+          <Text style={[
+            styles.tabText, 
+            { color: colors.textSecondary },
+            activeTab === 'realtime' && { color: colors.textInverse }
+          ]}>
             Tiempo Real
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'historical' && styles.activeTab]}
+          style={[
+            styles.tab, 
+            { borderColor: colors.border },
+            activeTab === 'historical' && { backgroundColor: colors.activeTab, borderWidth: 0 }
+          ]}
           onPress={() => setActiveTab('historical')}
         >
-          <Text style={[styles.tabText, activeTab === 'historical' && styles.activeTabText]}>
+          <Text style={[
+            styles.tabText, 
+            { color: colors.textSecondary },
+            activeTab === 'historical' && { color: colors.textInverse }
+          ]}>
             Histórico
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Contenido */}
-      <ScrollView style={styles.content} contentContainerStyle={{flexGrow: 1}}>
+      <ScrollView style={[styles.content, { backgroundColor: colors.background }]} contentContainerStyle={{flexGrow: 1}}>
         {activeTab === 'realtime' ? renderRealTimeData() : renderHistoricalData()}
-        {/* Agregar padding bottom para compensar la barra de gestos */}
         <View style={{ height: insets.bottom || 20 }} />
       </ScrollView>
     </View>
@@ -446,7 +437,6 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
 };
 
 const styles = StyleSheet.create({
-  // Estilos para la alerta
   alertCard: {
     backgroundColor: '#fee2e2',
     borderRadius: 12,
@@ -472,8 +462,6 @@ const styles = StyleSheet.create({
     color: '#7f1d1d',
     fontStyle: 'italic',
   },
-
-  // Historial
   historyRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -481,21 +469,16 @@ const styles = StyleSheet.create({
   },
   historyIndex: {
     width: 20,
-    color: '#6b7280',
   },
   historyTime: {
     flex: 1,
-    color: '#374151',
   },
   historyValue: {
     color: '#10b981',
     fontWeight: 'bold',
   },
-
-  // Layout general
   container: {
     flex: 1,
-    backgroundColor: '#93ab6bff',
     ...(Platform.OS === 'web' && { minHeight: '100vh' }),
   },
   loading: {
@@ -504,12 +487,8 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 18,
-    color: '#6b7280',
   },
-
-  // Header
   header: {
-    paddingTop: 20,
     paddingBottom: 20,
     paddingHorizontal: 10,
   },
@@ -521,15 +500,16 @@ const styles = StyleSheet.create({
   headerTextContainer: {
     flex: 1,
     alignItems: 'center',
+    marginHorizontal: 10,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20, // Reducido un poco para dar espacio a botones
     fontWeight: 'bold',
     color: 'white',
     textAlign: 'center',
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: 'rgba(255, 255, 255, 1)',
     marginTop: 4,
     fontWeight: 'bold',
@@ -541,8 +521,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    marginRight: 12,
   },
   backButtonText: {
     color: 'white',
@@ -551,37 +529,41 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.4)',
-    marginLeft: 12,
+    marginLeft: 6,
   },
   logoutButtonText: {
     color: 'white',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
   },
-
-  // Botón ML en header
   mlButtonHeader: {
     backgroundColor: 'rgba(255,255,255,0.16)',
     paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     borderRadius: 12,
-    marginLeft: 8,
+    marginRight: 6,
   },
   mlButtonHeaderText: {
-    color: '#059669',
+    color: '#ffffff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 14,
   },
-
-  // Tabs
+  // Estilo para el botón de Settings
+  settingsButtonHeader: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    padding: 6,
+    borderRadius: 20,
+    marginRight: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tabsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#f3f3f3',
     marginTop: 0,
     padding: 4,
     paddingTop: 15,
@@ -597,40 +579,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#00000034',
     marginHorizontal: 4,
-  },
-  activeTab: {
-    backgroundColor: '#a3bb7c',
-    shadowColor: '#000000ff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 3,
-    elevation: 5,
-    borderWidth: 0,
   },
   tabText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#6b7280',
   },
-  activeTabText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-
-  // Contenido
   content: {
     flex: 1,
-    backgroundColor: '#f8fafc',
     paddingTop: 20,
   },
   tabContent: {
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-
-  // Summary cards
   summaryCards: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -654,10 +616,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
   },
-
-  // Data cards
   dataCard: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 20,
     marginBottom: 15,
@@ -667,15 +626,19 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#00000030',
+  },
+  chartCard: {
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 15,
+    alignItems: 'center',
+    elevation: 2,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#374151',
     marginBottom: 15,
   },
-
   dataGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -683,7 +646,6 @@ const styles = StyleSheet.create({
   },
   dataItem: {
     width: '48%',
-    backgroundColor: '#f8fafc',
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
@@ -691,17 +653,13 @@ const styles = StyleSheet.create({
   },
   dataLabel: {
     fontSize: 14,
-    color: '#6b7280',
     marginBottom: 5,
     fontWeight: 'bold',
   },
   dataValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#93ab6b',
   },
-
-  // Summary grid
   summaryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -709,7 +667,6 @@ const styles = StyleSheet.create({
   },
   summaryItem: {
     width: '48%',
-    backgroundColor: '#f8fafc',
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
@@ -717,17 +674,13 @@ const styles = StyleSheet.create({
   },
   summaryItemLabel: {
     fontSize: 14,
-    color: '#6b7280',
     marginBottom: 5,
     textAlign: 'center',
   },
   summaryItemValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#059669',
   },
-
-  // Chart
   chart: {
     marginVertical: 8,
     borderRadius: 16,
