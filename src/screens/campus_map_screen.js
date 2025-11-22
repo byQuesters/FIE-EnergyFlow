@@ -12,6 +12,7 @@ import {
   StatusBar, 
   Animated,
   PanResponder,
+  StatusBar, 
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,6 +23,9 @@ import { authService } from "../../lib/auth";
 import { ImageBackground } from "react-native";
 import Svg, { Polygon, Text as SvgText } from "react-native-svg";
 const mapImage = require("../../assets/MapConcept2.png");
+import { useTheme } from "../contexts/ThemeContext"; 
+import SettingsModal from "../components/SettingsModal"; 
+
 const { width } = Dimensions.get("window");
 
 // Tamaño del PNG usado como base para el panning, si la reslución del PNG cambia, tambíen debe cambiase aquí
@@ -31,40 +35,17 @@ const MAP_HEIGHT = 712;
 /* Configuración de edificios del campus */
 /* ------------------------------------------------------------------------- */
 const campusBuildingsConfig = [
-  // Ids originales (conservados)
-  {
-    id: "photon-001", name: "Edificio Principal (A1)",code: "A1", position: { x: 621, y: 368   }, shape: "hex", size: { w: 174, h: 154 },
-  },
-  {
-    id: 1, name: "Aulas (A2)",code: "A2", position: { x: 908, y: 390}, size: { w: 200, h: 75 },
-  },
-  {
-    id: 2, name: "Aulas (A3)", code: "A3", position: { x: 960, y: 513 }, size: { w: 130, h: 70 },
-  },
-  {
-    id: 3, name: "Laboratorio IC (LIC)", code: "LIC", position: { x: 760, y: 258 }, size: { w: 95, h: 75 },
-  },
-  {
-    id: 4, name: "Dirección (D)", code: "D", position: { x: 580, y: 115 },size: { w: 210, h: 73 },
-  },
-  {
-    id: 5, name: "Lab. M (LM)", code: "LM", position: { x: 160, y: 390 }, size: { w: 205, h: 105 },
-  },
-  {
-    id: 6, name: "Lab. SE (LSE)", code: "LSE", position: { x: 190, y: 260 }, size: { w: 180, h: 70 },
-  },
-  {
-    id: "b-lem", name: "Laboratorio de Electromecánica (LEM)", code: "LEM", position: { x: 440, y: 257 }, size: { w: 100, h: 75 },
-  },
-  {
-    id: "b-le", name: "Laboratorio de Electrónica (LE)", code: "LE", position: { x: 540, y: 257 }, size: { w: 100, h: 75 },
-  },
-  {
-    id: "b-liot", name: "Laboratorio IoT (LIOT)", code: "LIOT", position: { x: 854, y: 258 }, size: { w: 73, h: 75 },
-  },
-  {
-    id: "b-se", name: "Sala de Equipos (SE)", code: "SE", position: { x: 470, y: 340 }, size: { w: 80, h: 60 }, borderOnly: true,
-  }
+  { id: "photon-001", name: "Edificio Principal (A1)", code: "A1", position: { x: 540, y: 250 }, shape: "diamond", size: { w: 120, h: 120 } },
+  { id: 1, name: "Administración (A2)", code: "A2", position: { x: 820, y: 210 }, size: { w: 150, h: 46 } },
+  { id: 2, name: "Aulas (A3)", code: "A3", position: { x: 820, y: 300 }, size: { w: 150, h: 46 } },
+  { id: 3, name: "Laboratorios (LIC)", code: "LIC", position: { x: 510, y: 160 }, size: { w: 160, h: 46 } },
+  { id: 4, name: "Biblioteca (D)", code: "D", position: { x: 460, y: 70 }, size: { w: 180, h: 46 } },
+  { id: 5, name: "Cafetería (LM)", code: "LM", position: { x: 140, y: 290 }, size: { w: 150, h: 60 } },
+  { id: 6, name: "Gimnasio (LSE)", code: "LSE", position: { x: 160, y: 180 }, size: { w: 150, h: 60 } },
+  { id: "b-lem", name: "Laboratorio de Electromecánica (LEM)", code: "LEM", position: { x: 300, y: 160 }, size: { w: 190, h: 46 } },
+  { id: "b-le", name: "Laboratorio de Electrónica (LE)", code: "LE", position: { x: 430, y: 160 }, size: { w: 70, h: 46 } },
+  { id: "b-liot", name: "Laboratorio IoT (LIOT)", code: "LIOT", position: { x: 650, y: 160 }, size: { w: 160, h: 46 } },
+  { id: "b-se", name: "Sala de Equipos (SE)", code: "SE", position: { x: 350, y: 220 }, size: { w: 80, h: 56 }, borderOnly: true }
 ];
 
 const CampusMapScreen = ({ navigation }) => {
@@ -75,54 +56,11 @@ const CampusMapScreen = ({ navigation }) => {
   const [settingsVisible, setSettingsVisible] = useState(false);
 
   const insets = useSafeAreaInsets();
+  
+  // Hooks del Tema
+  const { theme } = useTheme();
+  const { colors } = theme;
 
-  // Panning state for map navigation
-  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const lastOffset = useRef({ x: 0, y: 0 });
-  const [containerSize, setContainerSize] = useState({ w: width - 40, h: 400 });
-
-  const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        pan.setOffset({ x: lastOffset.current.x, y: lastOffset.current.y });
-        pan.setValue({ x: 0, y: 0 });
-      },
-      onPanResponderMove: (e, gesture) => {
-        // compute clamped absolute position
-        let newX = lastOffset.current.x + gesture.dx;
-        let newY = lastOffset.current.y + gesture.dy;
-        const minX = Math.min(0, containerSize.w - MAP_WIDTH);
-        const maxX = 0;
-        const minY = Math.min(0, containerSize.h - MAP_HEIGHT);
-        const maxY = 0;
-        newX = clamp(newX, minX, maxX);
-        newY = clamp(newY, minY, maxY);
-        // set relative values (because offset is set)
-        pan.x.setValue(newX - lastOffset.current.x);
-        pan.y.setValue(newY - lastOffset.current.y);
-      },
-      onPanResponderRelease: (e, gesture) => {
-        let newX = lastOffset.current.x + gesture.dx;
-        let newY = lastOffset.current.y + gesture.dy;
-        const minX = Math.min(0, containerSize.w - MAP_WIDTH);
-        const maxX = 0;
-        const minY = Math.min(0, containerSize.h - MAP_HEIGHT);
-        const maxY = 0;
-        newX = clamp(newX, minX, maxX);
-        newY = clamp(newY, minY, maxY);
-        pan.setOffset({ x: newX, y: newY });
-        pan.setValue({ x: 0, y: 0 });
-        lastOffset.current.x = newX;
-        lastOffset.current.y = newY;
-      },
-    }),
-  ).current;
-
-  // Verificar sesión al cargar el componente
   useEffect(() => {
     const checkAuth = async () => {
       const isAuth = await authService.isUserAuthenticated();
@@ -287,130 +225,104 @@ const CampusMapScreen = ({ navigation }) => {
         <View style={[styles.mapContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.mapTitle, { color: colors.text }]}>Mapa del Campus</Text>
 
-            {/* 🔵 MAPA PNG INTERACTIVO (reemplaza GOOGLE MAPS) */}
-            <View
-              style={styles.mapBox}
-              onLayout={(e) =>
-                setContainerSize({
-                  w: e.nativeEvent.layout.width,
-                  h: e.nativeEvent.layout.height,
-                })
-              }
-            >
-              <View style={{ flex: 1, overflow: "hidden" }}>
-                <Animated.View
-                  {...panResponder.panHandlers}
-                  style={{
-                    width: MAP_WIDTH,
-                    height: MAP_HEIGHT,
-                    transform: [{ translateX: pan.x }, { translateY: pan.y }],
-                  }}
-                >
-                  <ImageBackground
-                    source={mapImage}
-                    style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}
-                    imageStyle={{ resizeMode: "cover" }}
-                  >
-                    {/* 🔵 Hotspots interactivos encima del PNG (se mueven con la imagen) */}
-                    {(buildingsData.length ? buildingsData : campusBuildingsConfig).map((b) => {
-                      const pos = b.position || { x: 0, y: 0 };
-                      const size = b.size || { w: 80, h: 40 }; // ajustable
+          <View style={[styles.mapView, { borderColor: theme.dark ? '#374151' : '#d1d5db' }]}>
+            <View style={[styles.mapBackground, { backgroundColor: theme.dark ? '#064e3b' : '#dff0c7' }]}> 
+              <LinearGradient
+                colors={colors.mapBackground}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              />
 
-                      // Forma del edifico A1 hexagonal
-                      if (b.shape === "hex") {
-                        const w = size.w;
-                        const h = size.h;
-                        const points = `${w * 0.25},0 ${w * 0.75},0 ${w},${h * 0.5} ${w * 0.75},${h} ${w * 0.25},${h} 0,${h * 0.5}`;
-                        return (
-                          <Svg
-                            key={b.id}
-                            style={{ position: "absolute", left: pos.x, top: pos.y, width: w, height: h }}
-                            viewBox={`0 0 ${w} ${h}`}
-                          >
-                            <Polygon
-                              points={points}
-                              fill= "#6b7280"
-                              opacity={0.35}
-                              stroke="#000"
-                              strokeWidth={2}
-                              onPress={() =>
-                                navigation.navigate("BuildingDashboard", {
-                                  buildingId: b.id,
-                                  buildingName: b.name,
-                                  buildingData: b,
-                                })
-                              }
-                            />
-                            <SvgText
-                              x={w / 2}
-                              y={h / 2 - 4}
-                              fill="#fff"
-                              fontFamily="Arial"
-                              fontWeight="800"
-                              fontSize={14}
-                              textAnchor="middle"
-                            >
-                              {b.code}
-                            </SvgText>
-                            <SvgText
-                              x={w / 2}
-                              y={h / 2 + 12}
-                              fill="#e2e8f0"
-                              fontFamily="Arial"
-                              fontWeight={600}
-                              fontSize={10}
-                              textAnchor="middle"
-                            >
-                              {(b.consumption || 0).toFixed(1)} kWh
-                            </SvgText>
-                          </Svg>
-                        );
-                      }
+              <View style={styles.mapBorder} />
 
-                      return (
-                        <TouchableOpacity
-                          key={b.id}
-                          onPress={() =>
-                            navigation.navigate("BuildingDashboard", {
-                              buildingId: b.id,
-                              buildingName: b.name,
-                              buildingData: b,
-                            })
-                          }
-                          activeOpacity={0.85}
-                          style={{
-                            position: "absolute",
-                            left: pos.x,
-                            top: pos.y,
-                            width: size.w,
-                            height: size.h,
-                            justifyContent: "center",
-                            alignItems: "center",
-                            borderRadius: 6,
-                            backgroundColor: `${b.color || "#6b7280"}55`,
-                            borderWidth: 2,
-                            borderColor: "#00000055",
-                          }}
-                        >
-                          <Text style={{ fontWeight: "800", color: "#fff", fontSize: 14 }}>
-                            {b.code}
-                          </Text>
-                          <Text
-                            style={{
-                              fontWeight: "600",
-                              fontSize: 10,
-                              color: "#e2e8f0",
-                              marginTop: 2,
-                            }}
-                          >
-                            {(b.consumption || 0).toFixed(1)} kWh
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </ImageBackground>
-                </Animated.View>
+              <View style={[styles.roadVertical, theme.dark && { backgroundColor: '#374151' }]} />
+              <View style={[styles.roadHorizontal, theme.dark && { backgroundColor: '#374151' }]} />
+              
+              <View style={styles.roadVCenter} />
+              <View style={styles.roadHCenter} />
+
+              <View style={[styles.walkway, { left: 110, top: 100, height: 210 }, theme.dark && { backgroundColor: '#4b5563' }]} />
+              <View style={[styles.walkway, { left: 580, top: 120, width: 14, height: 130 }, theme.dark && { backgroundColor: '#4b5563' }]} />
+              <View style={[styles.walkway, { left: 740, top: 90, width: 16, height: 240 }, theme.dark && { backgroundColor: '#4b5563' }]} />
+
+              <View style={[styles.parking, theme.dark && { backgroundColor: '#1f2937', borderColor: '#000' }]}>
+                <View style={[styles.parkingSlots, theme.dark && { backgroundColor: '#374151', borderColor: '#4b5563' }]} />
               </View>
+
+              <View style={[styles.courts, theme.dark && { borderColor: '#92400e', backgroundColor: '#b45309' }]}>
+                <View style={styles.courtLine} />
+              </View>
+
+              {/* Arbolitos */}
+              {[
+                { x: 90, y: 130 }, { x: 250, y: 70 }, { x: 300, y: 250 },
+                { x: 620, y: 260 }, { x: 720, y: 330 }, { x: 900, y: 90 },
+                { x: 120, y: 360 }, { x: 520, y: 340 }, { x: 250, y: 340 },
+              ].map((p, idx) => (
+                <View key={`tree-${idx}`} style={[styles.tree, { left: p.x, top: p.y }, theme.dark && { backgroundColor: '#166534', borderColor: '#14532d' }]} />
+              ))}
+
+              {/* Edificios */}
+              {buildingsData.map((b) => {
+                const w = b.size?.w ?? 160;
+                const h = b.size?.h ?? 46;
+                const isDiamond = b.shape === "diamond";
+                const borderOnly = b.borderOnly;
+                const light = b.light;
+
+                const baseStyle = [
+                  styles.building,
+                  {
+                    left: b.position.x, top: b.position.y, width: w, height: h,
+                    backgroundColor: borderOnly ? "transparent" : light ? (theme.dark ? "#475569" : "#8db8d6") : (theme.dark ? "#1e293b" : "#0f2d55"),
+                    borderColor: borderOnly ? (theme.dark ? "#fb923c" : "#c63") : "#082743",
+                    borderWidth: 3,
+                  },
+                ];
+
+                const diamondStyle = [
+                  styles.buildingDiamond,
+                  {
+                    left: (b.position.x || 0) + (w / 2 - h / 2),
+                    top: (b.position.y || 0) - (w / 2 - h / 2),
+                    width: h + 20, height: h + 20,
+                    backgroundColor: theme.dark ? "#1e293b" : "#0f2d55",
+                    borderColor: "#082743", borderWidth: 3,
+                  },
+                ];
+
+                return (
+                  <TouchableOpacity
+                    key={b.id}
+                    activeOpacity={0.9}
+                    onPress={() => handleBuildingPress(b)}
+                    style={isDiamond ? diamondStyle : baseStyle}
+                  >
+                    <View style={[
+                        styles.sensorDot,
+                        { top: -10, left: isDiamond ? (h + 20) / 2 - 6 : w / 2 - 6 },
+                      ]} 
+                    />
+                    <Text
+                      style={[
+                        styles.buildingLabel,
+                        (light || borderOnly) && { color: theme.dark ? "#fff" : "#05243d" },
+                        isDiamond && { transform: [{ rotate: "90deg" }] },
+                      ]}
+                      numberOfLines={1} adjustsFontSizeToFit
+                    >
+                      {b.code || b.name}
+                    </Text>
+
+                    {!isDiamond && (
+                      <Text style={[styles.buildingConsumption, (light || borderOnly) && { color: theme.dark ? "#e2e8f0" : "#cdd8ea" }]}>
+                        {b.consumption} kWh
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
         </View>
@@ -656,6 +568,82 @@ const styles = StyleSheet.create({
   },
 
   /* Edificios */
+  roadVertical: {
+    position: "absolute",
+    right: 40, top: 20, bottom: 20,
+    width: 38,
+    backgroundColor: "#2e3033",
+    borderRadius: 16,
+  },
+  roadHorizontal: {
+    position: "absolute",
+    left: 200, right: 160, bottom: 120,
+    height: 28,
+    backgroundColor: "#2e3033",
+    borderRadius: 14,
+  },
+  roadVCenter: {
+    position: "absolute",
+    right: 58, top: 28, bottom: 28,
+    width: 2,
+    borderStyle: "dashed",
+    borderRightWidth: 2,
+    borderColor: "#ffd24a",
+  },
+  roadHCenter: {
+    position: "absolute",
+    left: 210, right: 170, bottom: 133,
+    height: 2,
+    borderStyle: "dashed",
+    borderTopWidth: 2,
+    borderColor: "#ffd24a",
+  },
+  walkway: {
+    position: "absolute",
+    width: 18,
+    backgroundColor: "#aeb4b9",
+    borderRadius: 6,
+  },
+  parking: {
+    position: "absolute",
+    left: 420, bottom: 70,
+    width: 190, height: 80,
+    backgroundColor: "#262a2f",
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#111",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  parkingSlots: {
+    width: "86%", height: "74%",
+    borderWidth: 2,
+    borderColor: "#3c434a",
+    backgroundColor: "#30363c",
+  },
+  courts: {
+    position: "absolute",
+    right: 40, bottom: 40,
+    width: 210, height: 110,
+    backgroundColor: "#f6a65b",
+    borderWidth: 3,
+    borderColor: "#e48f38",
+  },
+  courtLine: {
+    position: "absolute",
+    left: "50%", top: 0, bottom: 0,
+    width: 6,
+    backgroundColor: "#ffcc7a",
+  },
+  tree: {
+    position: "absolute",
+    width: 28, height: 28,
+    backgroundColor: "#3e7c3e",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#245a2c",
+    opacity: 0.9,
+  },
   building: {
     position: "absolute",
     justifyContent: "center",
@@ -689,6 +677,14 @@ const styles = StyleSheet.create({
   },
 
   /* Lista inferior */
+  sensorDot: {
+    position: "absolute",
+    width: 12, height: 12,
+    borderRadius: 6,
+    backgroundColor: "#ef4444",
+    borderWidth: 2,
+    borderColor: "#831313",
+  },
   buildingsListContainer: {
     margin: 20,
     marginTop: 0,
