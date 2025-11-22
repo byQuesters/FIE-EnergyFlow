@@ -31,22 +31,22 @@ const campusBuildingsConfig = [
     id: "photon-001", name: "Edificio Principal (A1)",code: "A1", position: { x: 540, y: 250 }, shape: "diamond", size: { w: 120, h: 120 },
   },
   {
-    id: 1, name: "Administración (A2)",code: "A2", position: { x: 820, y: 210 }, size: { w: 150, h: 46 },
+    id: 1, name: "Aulas (A2)",code: "A2", position: { x: 820, y: 210 }, size: { w: 150, h: 46 },
   },
   {
     id: 2, name: "Aulas (A3)", code: "A3", position: { x: 820, y: 300 }, size: { w: 150, h: 46 },
   },
   {
-    id: 3, name: "Laboratorios (LIC)", code: "LIC", position: { x: 510, y: 160 }, size: { w: 160, h: 46 },
+    id: 3, name: "Laboratorio IC (LIC)", code: "LIC", position: { x: 510, y: 160 }, size: { w: 160, h: 46 },
   },
   {
-    id: 4, name: "Biblioteca (D)", code: "D", position: { x: 460, y: 70 },size: { w: 180, h: 46 },
+    id: 4, name: "Dirección (D)", code: "D", position: { x: 460, y: 70 },size: { w: 180, h: 46 },
   },
   {
-    id: 5, name: "Cafetería (LM)", code: "LM", position: { x: 140, y: 290 }, size: { w: 150, h: 60 },
+    id: 5, name: "Lab. M (LM)", code: "LM", position: { x: 140, y: 290 }, size: { w: 150, h: 60 },
   },
   {
-    id: 6, name: "Gimnasio (LSE)", code: "LSE", position: { x: 160, y: 180 }, size: { w: 150, h: 60 },
+    id: 6, name: "Lab. SE (LSE)", code: "LSE", position: { x: 160, y: 180 }, size: { w: 150, h: 60 },
   },
 
   // Nuevos (para replicar el plano FIE)
