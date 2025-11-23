@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: "center",
   },
-  mapView: {
+  mapBox: {
     height: 480,
     borderRadius: 10,
     overflow: "hidden",
