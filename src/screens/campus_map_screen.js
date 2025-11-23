@@ -30,37 +30,37 @@ const { width } = Dimensions.get("window");
 const campusBuildingsConfig = [
   // Ids originales (conservados)
   {
-    id: "photon-001", name: "Edificio Principal (A1)",code: "A1", position: { x: 540, y: 250 }, shape: "diamond", size: { w: 120, h: 120 },
+    id: "photon-001", name: "Edificio Principal (A1)",code: "A1", position: { x: 640, y: 390 }, shape: "diamond", size: { w: 120, h: 120 },
   },
   {
-    id: 1, name: "Aulas (A2)",code: "A2", position: { x: 820, y: 210 }, size: { w: 150, h: 46 },
+    id: 1, name: "Aulas (A2)",code: "A2", position: { x: 908, y: 390}, size: { w: 200, h: 75 },
   },
   {
-    id: 2, name: "Aulas (A3)", code: "A3", position: { x: 820, y: 300 }, size: { w: 150, h: 46 },
+    id: 2, name: "Aulas (A3)", code: "A3", position: { x: 910, y: 513 }, size: { w: 178, h: 70 },
   },
   {
-    id: 3, name: "Laboratorio IC (LIC)", code: "LIC", position: { x: 510, y: 160 }, size: { w: 160, h: 46 },
+    id: 3, name: "Laboratorio IC (LIC)", code: "LIC", position: { x: 760, y: 258 }, size: { w: 95, h: 75 },
   },
   {
-    id: 4, name: "Dirección (D)", code: "D", position: { x: 460, y: 70 },size: { w: 180, h: 46 },
+    id: 4, name: "Dirección (D)", code: "D", position: { x: 580, y: 115 },size: { w: 210, h: 73 },
   },
   {
-    id: 5, name: "Lab. M (LM)", code: "LM", position: { x: 140, y: 290 }, size: { w: 150, h: 60 },
+    id: 5, name: "Lab. M (LM)", code: "LM", position: { x: 160, y: 390 }, size: { w: 205, h: 105 },
   },
   {
-    id: 6, name: "Lab. SE (LSE)", code: "LSE", position: { x: 160, y: 180 }, size: { w: 150, h: 60 },
+    id: 6, name: "Lab. SE (LSE)", code: "LSE", position: { x: 190, y: 260 }, size: { w: 180, h: 70 },
   },
   {
-    id: "b-lem", name: "Laboratorio de Electromecánica (LEM)", code: "LEM", position: { x: 300, y: 160 }, size: { w: 190, h: 46 },
+    id: "b-lem", name: "Laboratorio de Electromecánica (LEM)", code: "LEM", position: { x: 440, y: 257 }, size: { w: 100, h: 75 },
   },
   {
-    id: "b-le", name: "Laboratorio de Electrónica (LE)", code: "LE", position: { x: 430, y: 160 }, size: { w: 70, h: 46 },
+    id: "b-le", name: "Laboratorio de Electrónica (LE)", code: "LE", position: { x: 540, y: 257 }, size: { w: 100, h: 75 },
   },
   {
-    id: "b-liot", name: "Laboratorio IoT (LIOT)", code: "LIOT", position: { x: 650, y: 160 }, size: { w: 160, h: 46 },
+    id: "b-liot", name: "Laboratorio IoT (LIOT)", code: "LIOT", position: { x: 854, y: 258 }, size: { w: 73, h: 75 },
   },
   {
-    id: "b-se", name: "Sala de Equipos (SE)", code: "SE", position: { x: 350, y: 220 }, size: { w: 80, h: 56 }, borderOnly: true,
+    id: "b-se", name: "Sala de Equipos (SE)", code: "SE", position: { x: 470, y: 340 }, size: { w: 80, h: 60 }, borderOnly: true,
   }
 ];
 
