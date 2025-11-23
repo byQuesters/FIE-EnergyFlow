@@ -14,6 +14,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchLatestData } from "../data/energy_data";
 import { authService } from "../../lib/auth";
+import { ImageBackground } from "react-native";
+const mapImage = require("../../assets/MapConcept2.png");
+
 
 const { width } = Dimensions.get("window");
 /* ------------------------------------------------------------------------- */
@@ -261,121 +264,65 @@ const CampusMapScreen = ({ navigation }) => {
         <View style={styles.mapContainer}>
           <Text style={styles.mapTitle}>Mapa del Campus</Text>
 
-          <View style={styles.mapView}>
-            {/* Fondo tipo césped */}
-            <View style={styles.mapBackground}>
-              <LinearGradient
-                colors={["#dff0c7", "#cfe6ae", "#e6f5d2"]}
+            {/* 🔵 MAPA PNG INTERACTIVO (reemplaza GOOGLE MAPS) */}
+            <View style={styles.mapBox}>
+              <ImageBackground
+                source={mapImage}
                 style={StyleSheet.absoluteFill}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              />
+                imageStyle={{ resizeMode: "cover" }}
+              >
+                {/* 🔵 Hotspots interactivos encima del PNG */}
+                {(buildingsData.length ? buildingsData : campusBuildingsConfig).map((b) => {
+                  // posición en px (AJÚSTALAS con tu SVG para que coincidan)
+                  const pos = b.position || { x: 0, y: 0 };
+                  const size = b.size || { w: 80, h: 40 }; // ajustable
 
-              {/* Marcos / orilla */}
-              <View style={styles.mapBorder} />
+                  return (
+                    <TouchableOpacity
+                      key={b.id}
+                      onPress={() =>
+                        navigation.navigate("BuildingDashboard", {
+                          buildingId: b.id,
+                          buildingName: b.name,
+                          buildingData: b,
+                        })
+                      }
+                      activeOpacity={0.85}
+                      style={{
+                        position: "absolute",
+                        left: pos.x,
+                        top: pos.y,
+                        width: size.w,
+                        height: size.h,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        borderRadius: 6,
 
-              {/* Andadores grises más claros */}
-              <View
-                style={[styles.walkway, { left: 110, top: 100, height: 210 }]}
-              />
-              <View
-                style={[
-                  styles.walkway,
-                  { left: 580, top: 120, width: 14, height: 130 },
-                ]}
-              />
-              <View
-                style={[
-                  styles.walkway,
-                  { left: 740, top: 90, width: 16, height: 240 },
-                ]}
-              />
-
-              {/* Render de edificios */}
-              {buildingsData.map((b) => {
-                const w = b.size?.w ?? 160;
-                const h = b.size?.h ?? 46;
-                const isDiamond = b.shape === "diamond";
-                const borderOnly = b.borderOnly;
-                const light = b.light;
-
-                // Estilo base de “rectángulo azul”
-                const baseStyle = [
-                  styles.building,
-                  {
-                    left: b.position.x,
-                    top: b.position.y,
-                    width: w,
-                    height: h,
-                    backgroundColor: borderOnly
-                      ? "transparent"
-                      : light
-                        ? "#8db8d6"
-                        : "#0f2d55",
-                    borderColor: borderOnly ? "#c63" : "#082743",
-                    borderWidth: borderOnly ? 3 : 3,
-                  },
-                ];
-
-                // Diamante (A1)
-                const diamondStyle = [
-                  styles.buildingDiamond,
-                  {
-                    left: (b.position.x || 0) + (w / 2 - h / 2),
-                    top: (b.position.y || 0) - (w / 2 - h / 2),
-                    width: h + 20,
-                    height: h + 20,
-                    backgroundColor: "#0f2d55",
-                    borderColor: "#082743",
-                    borderWidth: 3,
-                  },
-                ];
-
-                return (
-                  <TouchableOpacity
-                    key={b.id}
-                    activeOpacity={0.9}
-                    onPress={() => handleBuildingPress(b)}
-                    style={isDiamond ? diamondStyle : baseStyle}
-                  >
-                    {/* Sensor rojo (punto) */}
-                    <View
-                      style={[
-                        styles.sensorDot,
-                        {
-                          backgroundColor:
-                            b.status === "critical" ? "#ef4444" : "#ef4444", // siempre rojo, como en el plano
-                          top: isDiamond ? -10 : -10,
-                          left: isDiamond ? (h + 20) / 2 - 6 : w / 2 - 6,
-                        },
-                      ]}
-                    />
-
-                    {/* Etiqueta del edificio en el mapa */}
-                    <Text
-                      style={[
-                        styles.buildingLabel,
-                        light && { color: "#05243d" },
-                        borderOnly && { color: "#05243d" },
-                        isDiamond && { transform: [{ rotate: "90deg" }] }, // texto vertical similar a A1 rotado
-                      ]}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
+                        // color del estado del edificio
+                        backgroundColor: `${b.color || "#6b7280"}55`,
+                        borderWidth: 2,
+                        borderColor: "#00000055",
+                      }}
                     >
-                      {b.code || b.name}
-                    </Text>
-
-                    {/* Consumo (se muestra pequeño bajo el código) */}
-                    {!isDiamond && (
-                      <Text style={styles.buildingConsumption}>
-                        {b.consumption} kWh
+                      <Text style={{ fontWeight: "800", color: "#fff", fontSize: 14 }}>
+                        {b.code}
                       </Text>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
+                      <Text
+                        style={{
+                          fontWeight: "600",
+                          fontSize: 10,
+                          color: "#e2e8f0",
+                          marginTop: 2,
+                        }}
+                      >
+                        {(b.consumption || 0).toFixed(1)} kWh
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ImageBackground>
             </View>
-          </View>
+
         </View>
 
         {/* Lista de edificios (SIN CAMBIOS de funcionalidad) */}
