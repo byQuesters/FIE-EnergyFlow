@@ -16,8 +16,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons"; 
 import { fetchLatestData } from "../data/energy_data";
 import { authService } from "../../lib/auth";
-import { useTheme } from "../contexts/ThemeContext"; 
-import SettingsModal from "../components/SettingsModal"; 
 
 const { width } = Dimensions.get("window");
 /* ------------------------------------------------------------------------- */
@@ -237,15 +235,17 @@ const CampusMapScreen = ({ navigation }) => {
         <View style={[styles.mapContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.mapTitle, { color: colors.text }]}>Mapa del Campus</Text>
 
-          <View style={[styles.mapView, { borderColor: theme.dark ? '#374151' : '#d1d5db' }]}>
-            <View style={[styles.mapBackground, { backgroundColor: theme.dark ? '#064e3b' : '#dff0c7' }]}> 
+          <View style={styles.mapView}>
+            {/* Fondo tipo césped */}
+            <View style={styles.mapBackground}>
               <LinearGradient
-                colors={colors.mapBackground}
+                colors={["#dff0c7", "#cfe6ae", "#e6f5d2"]}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               />
 
+              {/* Marcos / orilla */}
               <View style={styles.mapBorder} />
 
               {/* Andadores grises más claros */}
@@ -273,24 +273,35 @@ const CampusMapScreen = ({ navigation }) => {
                 const borderOnly = b.borderOnly;
                 const light = b.light;
 
+                // Estilo base de “rectángulo azul”
                 const baseStyle = [
                   styles.building,
                   {
-                    left: b.position.x, top: b.position.y, width: w, height: h,
-                    backgroundColor: borderOnly ? "transparent" : light ? (theme.dark ? "#475569" : "#8db8d6") : (theme.dark ? "#1e293b" : "#0f2d55"),
-                    borderColor: borderOnly ? (theme.dark ? "#fb923c" : "#c63") : "#082743",
-                    borderWidth: 3,
+                    left: b.position.x,
+                    top: b.position.y,
+                    width: w,
+                    height: h,
+                    backgroundColor: borderOnly
+                      ? "transparent"
+                      : light
+                        ? "#8db8d6"
+                        : "#0f2d55",
+                    borderColor: borderOnly ? "#c63" : "#082743",
+                    borderWidth: borderOnly ? 3 : 3,
                   },
                 ];
 
+                // Diamante (A1)
                 const diamondStyle = [
                   styles.buildingDiamond,
                   {
                     left: (b.position.x || 0) + (w / 2 - h / 2),
                     top: (b.position.y || 0) - (w / 2 - h / 2),
-                    width: h + 20, height: h + 20,
-                    backgroundColor: theme.dark ? "#1e293b" : "#0f2d55",
-                    borderColor: "#082743", borderWidth: 3,
+                    width: h + 20,
+                    height: h + 20,
+                    backgroundColor: "#0f2d55",
+                    borderColor: "#082743",
+                    borderWidth: 3,
                   },
                 ];
 
@@ -301,32 +312,44 @@ const CampusMapScreen = ({ navigation }) => {
                     onPress={() => handleBuildingPress(b)}
                     style={isDiamond ? diamondStyle : baseStyle}
                   >
-                    <View style={[
+                    {/* Sensor rojo (punto) */}
+                    <View
+                      style={[
                         styles.sensorDot,
-                        { top: -10, left: isDiamond ? (h + 20) / 2 - 6 : w / 2 - 6 },
-                      ]} 
+                        {
+                          backgroundColor:
+                            b.status === "critical" ? "#ef4444" : "#ef4444", // siempre rojo, como en el plano
+                          top: isDiamond ? -10 : -10,
+                          left: isDiamond ? (h + 20) / 2 - 6 : w / 2 - 6,
+                        },
+                      ]}
                     />
+
+                    {/* Etiqueta del edificio en el mapa */}
                     <Text
                       style={[
                         styles.buildingLabel,
-                        (light || borderOnly) && { color: theme.dark ? "#fff" : "#05243d" },
-                        isDiamond && { transform: [{ rotate: "90deg" }] },
+                        light && { color: "#05243d" },
+                        borderOnly && { color: "#05243d" },
+                        isDiamond && { transform: [{ rotate: "90deg" }] }, // texto vertical similar a A1 rotado
                       ]}
-                      numberOfLines={1} adjustsFontSizeToFit
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
                     >
                       {b.code || b.name}
                     </Text>
 
+                    {/* Consumo (se muestra pequeño bajo el código) */}
                     {!isDiamond && (
-                      <Text style={[styles.buildingConsumption, (light || borderOnly) && { color: theme.dark ? "#e2e8f0" : "#cdd8ea" }]}>
+                      <Text style={styles.buildingConsumption}>
                         {b.consumption} kWh
                       </Text>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ImageBackground>
             </View>
-          </View>
+
         </View>
 
         {/* LISTA DE EDIFICIOS */}
