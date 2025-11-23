@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   mapBox: {
-    height: 480,
+    height: 620,
     borderRadius: 10,
     overflow: "hidden",
     borderWidth: 1,
