@@ -303,13 +303,64 @@ const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header con información del edificio */}
-      <LinearGradient colors={['#93ab6bff', '#b7c586ff']} style={styles.header}>
-        <Text style={styles.headerTitle}>{buildingName}</Text>
-        <Text style={styles.headerSubtitle}>
-          Última actualización: {new Date(currentData.realTimeData.timestamp).toLocaleTimeString()}
-        </Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+      <SettingsModal 
+        visible={settingsVisible}
+        onClose={() => setSettingsVisible(false)}
+        systemInfo={null} 
+      />
+
+      <LinearGradient 
+        colors={colors.headerGradient} 
+        style={[styles.header, { paddingTop: insets.top + 20 }]}
+      >
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            style={[styles.backButton, { borderColor: 'rgba(255,255,255,0.4)' }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>{buildingName}</Text>
+            <Text style={styles.headerSubtitle}>
+              Última actualización: {new Date(currentData.realTimeData.timestamp).toLocaleTimeString()}
+            </Text>
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity
+              style={styles.mlButtonHeader}
+              onPress={() => navigation.navigate('MLPredict')}
+            >
+              <Text style={styles.mlButtonHeaderText}>ML</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.reportButtonHeader}
+              onPress={() => navigation.navigate('CFEReport', { buildingId, buildingName })}
+            >
+              <Ionicons name="document-text-outline" size={24} color="white" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setSettingsVisible(true)}
+              style={styles.settingsButtonHeader}
+            >
+              <Ionicons name="settings-outline" size={24} color="white" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <Text style={styles.logoutButtonText}>🚪</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </LinearGradient>
 
       {/* Tabs */}
@@ -390,6 +441,63 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 1)',
     marginTop: 4,
     fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  backButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 25,
+    fontWeight: 'bold',
+  },
+  logoutButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    marginLeft: 6,
+  },
+  logoutButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  mlButtonHeader: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    marginRight: 6,
+  },
+  mlButtonHeaderText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  // Estilo para el botón de Reportes CFE
+  reportButtonHeader: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    padding: 6,
+    borderRadius: 20,
+    marginRight: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Estilo para el botón de Settings
+  settingsButtonHeader: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    padding: 6,
+    borderRadius: 20,
+    marginRight: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabsContainer: {
     flexDirection: 'row',
