@@ -20,6 +20,7 @@ import { fetchLatestData } from "../data/energy_data";
 import { authService } from "../../lib/auth";
 
 import { ImageBackground } from "react-native";
+import Svg, { Polygon, Text as SvgText } from "react-native-svg";
 const mapImage = require("../../assets/MapConcept2.png");
 const { width } = Dimensions.get("window");
 
@@ -32,7 +33,7 @@ const MAP_HEIGHT = 712;
 const campusBuildingsConfig = [
   // Ids originales (conservados)
   {
-    id: "photon-001", name: "Edificio Principal (A1)",code: "A1", position: { x: 640, y: 390 }, shape: "diamond", size: { w: 120, h: 120 },
+    id: "photon-001", name: "Edificio Principal (A1)",code: "A1", position: { x: 621, y: 368   }, shape: "hex", size: { w: 174, h: 154 },
   },
   {
     id: 1, name: "Aulas (A2)",code: "A2", position: { x: 908, y: 390}, size: { w: 200, h: 75 },
@@ -314,6 +315,57 @@ const CampusMapScreen = ({ navigation }) => {
                     {(buildingsData.length ? buildingsData : campusBuildingsConfig).map((b) => {
                       const pos = b.position || { x: 0, y: 0 };
                       const size = b.size || { w: 80, h: 40 }; // ajustable
+
+                      // Forma del edifico A1 hexagonal
+                      if (b.shape === "hex") {
+                        const w = size.w;
+                        const h = size.h;
+                        const points = `${w * 0.25},0 ${w * 0.75},0 ${w},${h * 0.5} ${w * 0.75},${h} ${w * 0.25},${h} 0,${h * 0.5}`;
+                        return (
+                          <Svg
+                            key={b.id}
+                            style={{ position: "absolute", left: pos.x, top: pos.y, width: w, height: h }}
+                            viewBox={`0 0 ${w} ${h}`}
+                          >
+                            <Polygon
+                              points={points}
+                              fill= "#6b7280"
+                              opacity={0.35}
+                              stroke="#000"
+                              strokeWidth={2}
+                              onPress={() =>
+                                navigation.navigate("BuildingDashboard", {
+                                  buildingId: b.id,
+                                  buildingName: b.name,
+                                  buildingData: b,
+                                })
+                              }
+                            />
+                            <SvgText
+                              x={w / 2}
+                              y={h / 2 - 4}
+                              fill="#fff"
+                              fontFamily="Arial"
+                              fontWeight="800"
+                              fontSize={14}
+                              textAnchor="middle"
+                            >
+                              {b.code}
+                            </SvgText>
+                            <SvgText
+                              x={w / 2}
+                              y={h / 2 + 12}
+                              fill="#e2e8f0"
+                              fontFamily="Arial"
+                              fontWeight={600}
+                              fontSize={10}
+                              textAnchor="middle"
+                            >
+                              {(b.consumption || 0).toFixed(1)} kWh
+                            </SvgText>
+                          </Svg>
+                        );
+                      }
 
                       return (
                         <TouchableOpacity
