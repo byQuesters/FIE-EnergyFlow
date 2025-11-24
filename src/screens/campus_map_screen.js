@@ -584,31 +584,12 @@ const styles = StyleSheet.create({
     borderColor: "#2a2a2a55",
   },
 
-  /* Andadores */
-  walkway: {
-    position: "absolute",
-    width: 18,
-    backgroundColor: "#aeb4b9",
-    borderRadius: 6,
-  },
-
   /* Edificios */
   building: {
     position: "absolute",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    elevation: 6,
-  },
-  buildingDiamond: {
-    position: "absolute",
-    transform: [{ rotate: "45deg" }],
-    justifyContent: "center",
-    alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -626,14 +607,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     marginTop: 2,
-  },
-  sensorDot: {
-    position: "absolute",
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: "#831313",
   },
 
   /* Lista inferior */
