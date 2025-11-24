@@ -16,6 +16,7 @@ import {
   Image, // ✅ AGREGADO: Importación faltante
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { signInWithEmail, registerUser } from '../../lib/auth';
 
 const LogoUcol = require("../../assets/LogoUCOL.png");
@@ -53,7 +54,6 @@ const CustomAlert = ({ visible, type, title, message, onClose }) => {
           backgroundColor: '#ef4444',
           icon: '✕',
           iconBg: '#dc2626',
-          filter: 'blur(30px)',
         };
       case 'warning':
         return {
@@ -76,7 +76,10 @@ const CustomAlert = ({ visible, type, title, message, onClose }) => {
 
   return (
     <Modal transparent visible={visible} animationType="none">
-      <View style={styles.alertOverlay}>
+      <BlurView intensity={40} // Ajusta qué tan borroso se ve (0 a 100)
+        tint="dark"    // Puede ser 'light', 'dark', 'default'
+        style={styles.alertOverlay}
+      >
         <Animated.View 
           style={[
             styles.alertContainer,
@@ -108,7 +111,7 @@ const CustomAlert = ({ visible, type, title, message, onClose }) => {
             <Text style={styles.alertButtonText}>Entendido</Text>
           </TouchableOpacity>
         </Animated.View>
-      </View>
+      </BlurView>
     </Modal>
   );
 };
@@ -299,7 +302,6 @@ const AuthScreen = ({ navigation }) => {
               {/* Logo y título */}
               <View style={styles.header}>
                 <View style={styles.logoContainer}>
-                  {/* ✅ CORREGIDO: Solo una línea del logo */}
                   <Image source={LogoUcol} style={styles.logo} resizeMode="contain" />
                 </View>
                 <Text style={styles.subtitle}>Sistema de Monitoreo Energético de la FIE</Text>
@@ -482,7 +484,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     elevation: 8,
   },
-  // ✅ AGREGADO: Estilos para el logo
   logo: {
     width: '250%',
   },
@@ -622,10 +623,10 @@ const styles = StyleSheet.create({
   // Estilos para Alerta Personalizada
   alertOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    // backgroundColor: 'rgba(0, 0, 0, 0.5)', <--- ESTO SE ELIMINA O COMENTA
   },
   alertContainer: {
     width: '100%',
@@ -636,11 +637,14 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 0,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 1,
     shadowRadius: 8,
     elevation: 8,
+    borderWidth: 2,
+    borderColor: 'rgba(0, 0, 0, 1)',
+
   },
   alertIconContainer: {
     width: 64,
