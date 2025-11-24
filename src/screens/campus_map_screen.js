@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   RefreshControl,
   Platform,
   StatusBar, 
+  Animated,
+  PanResponder,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,7 +19,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { fetchLatestData } from "../data/energy_data";
 import { authService } from "../../lib/auth";
 
+import { ImageBackground } from "react-native";
+const mapImage = require("../../assets/MapConcept2.png");
 const { width } = Dimensions.get("window");
+
+// Tamaño del PNG usado como base para el panning, si la reslución del PNG cambia, tambíen debe cambiase aquí
+const MAP_WIDTH = 1450; 
+const MAP_HEIGHT = 712;
 /* ------------------------------------------------------------------------- */
 /* Configuración de edificios del campus */
 /* ------------------------------------------------------------------------- */
@@ -30,7 +38,7 @@ const campusBuildingsConfig = [
     id: 1, name: "Aulas (A2)",code: "A2", position: { x: 908, y: 390}, size: { w: 200, h: 75 },
   },
   {
-    id: 2, name: "Aulas (A3)", code: "A3", position: { x: 910, y: 513 }, size: { w: 178, h: 70 },
+    id: 2, name: "Aulas (A3)", code: "A3", position: { x: 960, y: 513 }, size: { w: 130, h: 70 },
   },
   {
     id: 3, name: "Laboratorio IC (LIC)", code: "LIC", position: { x: 760, y: 258 }, size: { w: 95, h: 75 },
@@ -66,11 +74,54 @@ const CampusMapScreen = ({ navigation }) => {
   const [settingsVisible, setSettingsVisible] = useState(false);
 
   const insets = useSafeAreaInsets();
-  
-  // Hooks del Tema
-  const { theme } = useTheme();
-  const { colors } = theme;
 
+  // Panning state for map navigation
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const lastOffset = useRef({ x: 0, y: 0 });
+  const [containerSize, setContainerSize] = useState({ w: width - 40, h: 400 });
+
+  const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        pan.setOffset({ x: lastOffset.current.x, y: lastOffset.current.y });
+        pan.setValue({ x: 0, y: 0 });
+      },
+      onPanResponderMove: (e, gesture) => {
+        // compute clamped absolute position
+        let newX = lastOffset.current.x + gesture.dx;
+        let newY = lastOffset.current.y + gesture.dy;
+        const minX = Math.min(0, containerSize.w - MAP_WIDTH);
+        const maxX = 0;
+        const minY = Math.min(0, containerSize.h - MAP_HEIGHT);
+        const maxY = 0;
+        newX = clamp(newX, minX, maxX);
+        newY = clamp(newY, minY, maxY);
+        // set relative values (because offset is set)
+        pan.x.setValue(newX - lastOffset.current.x);
+        pan.y.setValue(newY - lastOffset.current.y);
+      },
+      onPanResponderRelease: (e, gesture) => {
+        let newX = lastOffset.current.x + gesture.dx;
+        let newY = lastOffset.current.y + gesture.dy;
+        const minX = Math.min(0, containerSize.w - MAP_WIDTH);
+        const maxX = 0;
+        const minY = Math.min(0, containerSize.h - MAP_HEIGHT);
+        const maxY = 0;
+        newX = clamp(newX, minX, maxX);
+        newY = clamp(newY, minY, maxY);
+        pan.setOffset({ x: newX, y: newY });
+        pan.setValue({ x: 0, y: 0 });
+        lastOffset.current.x = newX;
+        lastOffset.current.y = newY;
+      },
+    }),
+  ).current;
+
+  // Verificar sesión al cargar el componente
   useEffect(() => {
     const checkAuth = async () => {
       const isAuth = await authService.isUserAuthenticated();
@@ -235,119 +286,79 @@ const CampusMapScreen = ({ navigation }) => {
         <View style={[styles.mapContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.mapTitle, { color: colors.text }]}>Mapa del Campus</Text>
 
-          <View style={styles.mapView}>
-            {/* Fondo tipo césped */}
-            <View style={styles.mapBackground}>
-              <LinearGradient
-                colors={["#dff0c7", "#cfe6ae", "#e6f5d2"]}
-                style={StyleSheet.absoluteFill}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              />
-
-              {/* Marcos / orilla */}
-              <View style={styles.mapBorder} />
-
-              {/* Andadores grises más claros */}
-              <View
-                style={[styles.walkway, { left: 110, top: 100, height: 210 }]}
-              />
-              <View
-                style={[
-                  styles.walkway,
-                  { left: 580, top: 120, width: 14, height: 130 },
-                ]}
-              />
-              <View
-                style={[
-                  styles.walkway,
-                  { left: 740, top: 90, width: 16, height: 240 },
-                ]}
-              />
-
-              {/* Render de edificios */}
-              {buildingsData.map((b) => {
-                const w = b.size?.w ?? 160;
-                const h = b.size?.h ?? 46;
-                const isDiamond = b.shape === "diamond";
-                const borderOnly = b.borderOnly;
-                const light = b.light;
-
-                // Estilo base de “rectángulo azul”
-                const baseStyle = [
-                  styles.building,
-                  {
-                    left: b.position.x,
-                    top: b.position.y,
-                    width: w,
-                    height: h,
-                    backgroundColor: borderOnly
-                      ? "transparent"
-                      : light
-                        ? "#8db8d6"
-                        : "#0f2d55",
-                    borderColor: borderOnly ? "#c63" : "#082743",
-                    borderWidth: borderOnly ? 3 : 3,
-                  },
-                ];
-
-                // Diamante (A1)
-                const diamondStyle = [
-                  styles.buildingDiamond,
-                  {
-                    left: (b.position.x || 0) + (w / 2 - h / 2),
-                    top: (b.position.y || 0) - (w / 2 - h / 2),
-                    width: h + 20,
-                    height: h + 20,
-                    backgroundColor: "#0f2d55",
-                    borderColor: "#082743",
-                    borderWidth: 3,
-                  },
-                ];
-
-                return (
-                  <TouchableOpacity
-                    key={b.id}
-                    activeOpacity={0.9}
-                    onPress={() => handleBuildingPress(b)}
-                    style={isDiamond ? diamondStyle : baseStyle}
+            {/* 🔵 MAPA PNG INTERACTIVO (reemplaza GOOGLE MAPS) */}
+            <View
+              style={styles.mapBox}
+              onLayout={(e) =>
+                setContainerSize({
+                  w: e.nativeEvent.layout.width,
+                  h: e.nativeEvent.layout.height,
+                })
+              }
+            >
+              <View style={{ flex: 1, overflow: "hidden" }}>
+                <Animated.View
+                  {...panResponder.panHandlers}
+                  style={{
+                    width: MAP_WIDTH,
+                    height: MAP_HEIGHT,
+                    transform: [{ translateX: pan.x }, { translateY: pan.y }],
+                  }}
+                >
+                  <ImageBackground
+                    source={mapImage}
+                    style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}
+                    imageStyle={{ resizeMode: "cover" }}
                   >
-                    {/* Sensor rojo (punto) */}
-                    <View
-                      style={[
-                        styles.sensorDot,
-                        {
-                          backgroundColor:
-                            b.status === "critical" ? "#ef4444" : "#ef4444", // siempre rojo, como en el plano
-                          top: isDiamond ? -10 : -10,
-                          left: isDiamond ? (h + 20) / 2 - 6 : w / 2 - 6,
-                        },
-                      ]}
-                    />
+                    {/* 🔵 Hotspots interactivos encima del PNG (se mueven con la imagen) */}
+                    {(buildingsData.length ? buildingsData : campusBuildingsConfig).map((b) => {
+                      const pos = b.position || { x: 0, y: 0 };
+                      const size = b.size || { w: 80, h: 40 }; // ajustable
 
-                    {/* Etiqueta del edificio en el mapa */}
-                    <Text
-                      style={[
-                        styles.buildingLabel,
-                        light && { color: "#05243d" },
-                        borderOnly && { color: "#05243d" },
-                        isDiamond && { transform: [{ rotate: "90deg" }] }, // texto vertical similar a A1 rotado
-                      ]}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                    >
-                      {b.code || b.name}
-                    </Text>
-
-                    {/* Consumo (se muestra pequeño bajo el código) */}
-                    {!isDiamond && (
-                      <Text style={styles.buildingConsumption}>
-                        {b.consumption} kWh
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ImageBackground>
+                      return (
+                        <TouchableOpacity
+                          key={b.id}
+                          onPress={() =>
+                            navigation.navigate("BuildingDashboard", {
+                              buildingId: b.id,
+                              buildingName: b.name,
+                              buildingData: b,
+                            })
+                          }
+                          activeOpacity={0.85}
+                          style={{
+                            position: "absolute",
+                            left: pos.x,
+                            top: pos.y,
+                            width: size.w,
+                            height: size.h,
+                            justifyContent: "center",
+                            alignItems: "center",
+                            borderRadius: 6,
+                            backgroundColor: `${b.color || "#6b7280"}55`,
+                            borderWidth: 2,
+                            borderColor: "#00000055",
+                          }}
+                        >
+                          <Text style={{ fontWeight: "800", color: "#fff", fontSize: 14 }}>
+                            {b.code}
+                          </Text>
+                          <Text
+                            style={{
+                              fontWeight: "600",
+                              fontSize: 10,
+                              color: "#e2e8f0",
+                              marginTop: 2,
+                            }}
+                          >
+                            {(b.consumption || 0).toFixed(1)} kWh
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ImageBackground>
+                </Animated.View>
+              </View>
             </View>
 
         </View>
