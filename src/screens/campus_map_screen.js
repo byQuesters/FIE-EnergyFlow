@@ -80,7 +80,7 @@ const CampusMapScreen = ({ navigation }) => {
   // Panning state for map navigation
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const lastOffset = useRef({ x: 0, y: 0 });
-  const [containerSize, setContainerSize] = useState({ w: width - 40, h: 400 });
+  const [containerSize, setContainerSize] = useState({ w: width - 40, h: 620 });
 
   const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
 
