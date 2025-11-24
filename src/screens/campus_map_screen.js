@@ -615,17 +615,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 6,
   },
-  buildingDiamond: {
-    position: "absolute",
-    transform: [{ rotate: "45deg" }],
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    elevation: 6,
-  },
   buildingLabel: {
     color: "#e6eefc",
     fontWeight: "800",
@@ -646,6 +635,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#831313",
   },
+
+  /* Lista inferior */
   buildingsListContainer: {
     margin: 20,
     marginTop: 0,
