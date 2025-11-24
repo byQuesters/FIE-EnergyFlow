@@ -19,7 +19,7 @@ import useEnableBodyScroll from './src/hooks/useEnableBodyScroll';
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const [initialRoute, setInitialRoute] = useState('Auth');
+  const [initialRoute, setInitialRoute] = useState('EF - Autenticación');
 
   // Habilitar scroll en el body (web)
   useEnableBodyScroll();
@@ -32,15 +32,15 @@ export default function App() {
         console.log('✅ Resultado de autenticación:', isAuthenticated);
         
         if (isAuthenticated) {
-          setInitialRoute('CampusMap');
+          setInitialRoute('EF - Mapa del Campus');
           console.log('📍 Usuario autenticado, iniciando en CampusMap');
         } else {
-          setInitialRoute('Auth');
+          setInitialRoute('EF - Autenticación');
           console.log('🔐 No hay sesión, iniciando en Login');
         }
       } catch (error) {
         console.error('❌ Error verificando autenticación:', error);
-        setInitialRoute('Auth');
+        setInitialRoute('EF - Autenticación');
       } finally {
         setIsLoading(false);
       }
@@ -62,7 +62,7 @@ export default function App() {
   return (
     <ThemeProvider>
     <NavigationContainer>
-      <StatusBar style="light" backgroundColor="#1e40af" />
+      <StatusBar style="light" backgroundColor="#789b6fff" />
       <Stack.Navigator 
         initialRouteName={initialRoute}
         screenOptions={{
@@ -70,11 +70,11 @@ export default function App() {
         }}
       >
         <Stack.Screen 
-          name="Auth" 
+          name="EF - Autenticación" 
           component={AuthScreen} 
         />
         <Stack.Screen 
-          name="PasswordRecovery" 
+          name="EF - Recuperar Contraseña" 
           component={PasswordRecoveryScreen} 
         />
         <Stack.Screen 
@@ -82,11 +82,11 @@ export default function App() {
           component={MLPredictionScreen}
         />
         <Stack.Screen 
-          name="CampusMap" 
+          name="EF - Mapa del Campus" 
           component={CampusMapScreen} 
         />
         <Stack.Screen 
-          name="BuildingDashboard" 
+          name="EF - Dashboard de Edificio" 
           component={BuildingDashboard} 
         />
       </Stack.Navigator>

@@ -211,8 +211,8 @@ const PasswordRecoveryScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <LinearGradient colors={['#6b8e4a', '#93ab6b', '#a8c48e']} style={styles.gradient}>
+    <View style={styles.safeArea}>
+      <LinearGradient colors={['#f5f5f5ff', '#f5f5f5ff', '#f5f5f5ff']} style={styles.gradient}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
@@ -353,7 +353,7 @@ const PasswordRecoveryScreen = ({ navigation }) => {
 
                 {/* Volver al login */}
                 <View style={styles.footer}>
-                  <TouchableOpacity onPress={() => navigation.navigate('Auth')}>
+                  <TouchableOpacity onPress={() => navigation.navigate('EF - Autenticación')}>
                     <Text style={styles.footerLink}>← Volver al inicio de sesión</Text>
                   </TouchableOpacity>
                 </View>
@@ -370,7 +370,7 @@ const PasswordRecoveryScreen = ({ navigation }) => {
         message={alert.message}
         onClose={closeAlert}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 80,
     height: 80,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(0, 0, 0, 0.78)',
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
@@ -408,17 +408,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: 'white',
+    color: 'black',
     marginBottom: 8,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 16,
+    color: 'rgba(0, 0, 0, 0.55)',
     textAlign: 'center',
     paddingHorizontal: 20,
+    fontWeight: 'bold',
   },
   formCard: {
     width: '100%',
@@ -475,9 +476,10 @@ const styles = StyleSheet.create({
   form: { width: '100%' },
   inputContainer: { marginBottom: 16 },
   label: {
-    fontSize: 14,
+    marginLeft: 4,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: '#000000bd',
     marginBottom: 8,
   },
   input: {

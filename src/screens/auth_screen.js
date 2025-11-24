@@ -53,6 +53,7 @@ const CustomAlert = ({ visible, type, title, message, onClose }) => {
           backgroundColor: '#ef4444',
           icon: '✕',
           iconBg: '#dc2626',
+          filter: 'blur(30px)',
         };
       case 'warning':
         return {
@@ -246,8 +247,8 @@ const AuthScreen = ({ navigation }) => {
         if (error.message.includes('ya está registrado') || error.message.includes('ya existe')) {
           showAlert(
             'warning',
-            'Email en uso', 
-            'Este email ya está registrado. Por favor inicia sesión o usa otro email.'
+            'Correo en uso', 
+            'Este Correo ya está registrado. Por favor inicia sesión o usa otro correo.'
           );
         } else {
           showAlert('error', 'Error de registro', error.message);
@@ -345,7 +346,7 @@ const AuthScreen = ({ navigation }) => {
 
                   {/* Campo Email */}
                   <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Email</Text>
+                    <Text style={styles.label}>Correo</Text>
                     <TextInput
                       style={styles.input}
                       placeholder="ejemplo@ucol.mx"
@@ -372,7 +373,7 @@ const AuthScreen = ({ navigation }) => {
                     />
                     {isLogin && (
                       <TouchableOpacity 
-                        onPress={() => navigation.navigate('PasswordRecovery')}
+                        onPress={() => navigation.navigate('EF - Recuperar Contraseña')}
                         style={styles.forgotPassword}
                       >
                         <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
@@ -496,7 +497,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 15,
-    color: '#1f2937',
+    color: '#000000b3',
     textAlign: 'center',
     paddingHorizontal: 20,
     marginTop: 0,
@@ -506,11 +507,13 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 450,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 10,
+    borderRadius: 20,
     padding: 24,
-    borderWidth: 2,
-    borderColor: 'rgba(0, 0, 0, 0.28)',
-    elevation: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
   },
   tabsContainer: {
     flexDirection: 'row',
@@ -553,9 +556,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
+    marginLeft: 4,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: '#000000bd',
     marginBottom: 8,
   },
   input: {
