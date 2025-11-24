@@ -15,6 +15,7 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 // Detectar URL base
 const getApiBaseUrl = () => {
@@ -78,8 +79,10 @@ const CustomAlert = ({ visible, type, title, message, onClose }) => {
 
   return (
     <Modal transparent visible={visible} animationType="none">
-      <View style={styles.alertOverlay}>
-        <Animated.View 
+      <BlurView intensity={40} // Ajusta qué tan borroso se ve (0 a 100)
+        tint="dark"    // Puede ser 'light', 'dark', 'default'
+        style={styles.alertOverlay}
+      >        <Animated.View 
           style={[
             styles.alertContainer,
             { backgroundColor: alertStyle.backgroundColor, opacity: fadeAnim }
@@ -98,7 +101,7 @@ const CustomAlert = ({ visible, type, title, message, onClose }) => {
             <Text style={styles.alertButtonText}>Entendido</Text>
           </TouchableOpacity>
         </Animated.View>
-      </View>
+      </BlurView>
     </Modal>
   );
 };
@@ -544,13 +547,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 15,
   },
-  // Estilos de alertas
+// Estilos para Alerta Personalizada
   alertOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    // backgroundColor: 'rgba(0, 0, 0, 0.5)', <--- ESTO SE ELIMINA O COMENTA
   },
   alertContainer: {
     width: '100%',
@@ -559,10 +562,16 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 1,
     shadowRadius: 8,
     elevation: 8,
+    borderWidth: 2,
+    borderColor: 'rgba(0, 0, 0, 1)',
+
   },
   alertIconContainer: {
     width: 64,
