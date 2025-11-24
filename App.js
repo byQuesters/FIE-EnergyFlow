@@ -3,6 +3,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
+import { ThemeProvider } from './src/contexts/ThemeContext';
 
 // Importar las pantallas
 import AuthScreen from './src/screens/auth_screen';
@@ -59,6 +60,7 @@ export default function App() {
   console.log('Energy Monitor Admin Dashboard starting... Ruta inicial:', initialRoute);
   
   return (
+    <ThemeProvider>
     <NavigationContainer>
       <StatusBar style="light" backgroundColor="#1e40af" />
       <Stack.Navigator 
@@ -89,5 +91,7 @@ export default function App() {
         />
       </Stack.Navigator>
     </NavigationContainer>
+    </ThemeProvider>
+
   );
 }

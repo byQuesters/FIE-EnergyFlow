@@ -1,5 +1,5 @@
 import { registerRootComponent } from 'expo';
-
+import { ThemeProvider } from './src/contexts/ThemeContext';
 import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
