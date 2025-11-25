@@ -71,12 +71,22 @@ const BuildingDashboard = ({ route, navigation }) => {
     checkAuth();
   }, [navigation]);
 
+  // Función corregida para forzar la recarga del Mapa al regresar
+  const handleBackToMap = () => {
+    // En lugar de goBack(), reseteamos el stack para que 'EF - Mapa del Campus'
+    // se monte desde cero. Esto arregla el problema de imágenes en blanco en Web.
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'EF - Mapa del Campus' }],
+    });
+  };
+
   const handleLogout = async () => {
     if (Platform.OS === 'web') {
       const confirmed = window.confirm('¿Estás seguro de que quieres cerrar sesión?');
       if (confirmed) {
         await authService.logout();
-        navigation.replace('Auth');
+        navigation.replace('EF - Autenticación');
       }
     } else {
       Alert.alert(
@@ -356,7 +366,7 @@ const BuildingDashboard = ({ route, navigation }) => {
         <View style={styles.headerContent}>
           <TouchableOpacity 
             style={[styles.backButton, { borderColor: 'rgba(255,255,255,0.4)' }]}
-            onPress={() => navigation.goBack()}
+            onPress={handleBackToMap} // USAMOS LA FUNCIÓN CORREGIDA
           >
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
