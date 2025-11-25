@@ -11,6 +11,7 @@ import CampusMapScreen from './src/screens/campus_map_screen';
 import BuildingDashboard from './src/screens/building_dashboard';
 import PasswordRecoveryScreen from './src/screens/password_recovery_screen';
 import MLPredictionScreen from './src/screens/ml_prediction_screen'; // { added }
+import PredictionsScreen from './src/screens/predictions_screen';
 import authService from './lib/auth';
 
 const Stack = createStackNavigator();
@@ -80,6 +81,10 @@ export default function App() {
         <Stack.Screen 
           name="MLPredict"
           component={MLPredictionScreen}
+        />
+        <Stack.Screen 
+          name="Predictions"
+          component={PredictionsScreen}
         />
         <Stack.Screen 
           name="EF - Mapa del Campus" 

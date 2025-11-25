@@ -293,6 +293,19 @@ const BuildingDashboard = ({ route, navigation }) => {
 
   const renderHistoricalData = () => (
     <View style={styles.tabContent}>
+      <TouchableOpacity
+        style={styles.predictionCta}
+        onPress={() =>
+          navigation.navigate('Predictions', {
+            buildingId,
+            buildingName,
+          })
+        }
+      >
+        <Text style={styles.predictionCtaText}>Predicciones</Text>
+        <Ionicons name="arrow-forward-circle" size={22} color="#f0fdf4" />
+      </TouchableOpacity>
+
       <View style={[styles.chartCard, { backgroundColor: colors.card }]}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>Consumo por Hora (kWh)</Text>
         {/* AGREGAMOS KEY PARA FORZAR RE-RENDER AL CAMBIAR DE TEMA */}
@@ -669,6 +682,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+  },
+  predictionCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#16a34a',
+    width: '100%',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
+    columnGap: 8,
+  },
+  predictionCtaText: {
+    color: '#f0fdf4',
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 0.3,
   },
   summaryItem: {
     width: '48%',
