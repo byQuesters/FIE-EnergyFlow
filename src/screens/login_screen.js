@@ -42,7 +42,7 @@ const LoginScreen = ({ navigation }) => {
       } else {
         // Login exitoso, navegar al mapa del campus
         console.log('Login exitoso:', data.user);
-        navigation.replace('CampusMap');
+        navigation.replace('EF - Mapa del Campus');
       }
     } catch (error) {
       console.error('Error en login:', error);

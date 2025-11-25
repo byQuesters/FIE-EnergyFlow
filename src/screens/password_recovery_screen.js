@@ -200,7 +200,7 @@ const PasswordRecoveryScreen = ({ navigation }) => {
       if (response.ok) {
         showAlert('success', '¡Contraseña actualizada!', 'Tu contraseña ha sido restablecida exitosamente');
         setTimeout(() => {
-          navigation.navigate('Auth');
+          navigation.navigate('EF - Autenticación');
         }, 2000);
       } else {
         showAlert('error', 'Error', data.message || 'No se pudo restablecer la contraseña');

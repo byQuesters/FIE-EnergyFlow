@@ -129,7 +129,7 @@ const CampusMapScreen = ({ navigation }) => {
       const isAuth = await authService.isUserAuthenticated();
       if (!isAuth) {
         // Si no hay sesión, redirigir al login
-        navigation.replace("Auth");
+        navigation.replace("EF - Autenticación");
       }
     };
     checkAuth();
@@ -144,7 +144,7 @@ const CampusMapScreen = ({ navigation }) => {
       );
       if (confirmed) {
         await authService.logout();
-        navigation.replace("Auth");
+        navigation.replace("EF - Autenticación");
       }
     } else {
       Alert.alert(
@@ -160,7 +160,7 @@ const CampusMapScreen = ({ navigation }) => {
             style: "destructive",
             onPress: async () => {
               await authService.logout();
-              navigation.replace("Auth");
+              navigation.replace("EF - Autenticación");
             },
           },
         ],

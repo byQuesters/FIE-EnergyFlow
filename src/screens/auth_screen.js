@@ -218,7 +218,7 @@ const AuthScreen = ({ navigation }) => {
         console.log('Login exitoso:', data.user);
         showAlert('success', '¡Bienvenido!', 'Has iniciado sesión correctamente');
         setTimeout(() => {
-          navigation.replace('CampusMap');
+          navigation.replace('EF - Mapa del Campus');
         }, 1500);
       }
     } catch (error) {
