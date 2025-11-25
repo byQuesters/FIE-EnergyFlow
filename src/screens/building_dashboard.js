@@ -371,7 +371,12 @@ const BuildingDashboard = ({ route, navigation }) => {
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <TouchableOpacity
               style={styles.mlButtonHeader}
-              onPress={() => navigation.navigate('MLPredict')}
+              onPress={() =>
+                navigation.navigate('MLPredict', {
+                  buildingId,
+                  buildingName,
+                })
+              }
             >
               <Text style={styles.mlButtonHeaderText}>ML</Text>
             </TouchableOpacity>
