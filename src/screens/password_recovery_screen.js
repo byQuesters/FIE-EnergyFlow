@@ -15,6 +15,7 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 // Detectar URL base
 const getApiBaseUrl = () => {
@@ -78,8 +79,10 @@ const CustomAlert = ({ visible, type, title, message, onClose }) => {
 
   return (
     <Modal transparent visible={visible} animationType="none">
-      <View style={styles.alertOverlay}>
-        <Animated.View 
+      <BlurView intensity={40} // Ajusta qué tan borroso se ve (0 a 100)
+        tint="dark"    // Puede ser 'light', 'dark', 'default'
+        style={styles.alertOverlay}
+      >        <Animated.View 
           style={[
             styles.alertContainer,
             { backgroundColor: alertStyle.backgroundColor, opacity: fadeAnim }
@@ -98,7 +101,7 @@ const CustomAlert = ({ visible, type, title, message, onClose }) => {
             <Text style={styles.alertButtonText}>Entendido</Text>
           </TouchableOpacity>
         </Animated.View>
-      </View>
+      </BlurView>
     </Modal>
   );
 };
@@ -197,7 +200,7 @@ const PasswordRecoveryScreen = ({ navigation }) => {
       if (response.ok) {
         showAlert('success', '¡Contraseña actualizada!', 'Tu contraseña ha sido restablecida exitosamente');
         setTimeout(() => {
-          navigation.navigate('Auth');
+          navigation.navigate('EF - Autenticación');
         }, 2000);
       } else {
         showAlert('error', 'Error', data.message || 'No se pudo restablecer la contraseña');
@@ -211,8 +214,8 @@ const PasswordRecoveryScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <LinearGradient colors={['#6b8e4a', '#93ab6b', '#a8c48e']} style={styles.gradient}>
+    <View style={styles.safeArea}>
+      <LinearGradient colors={['#f5f5f5ff', '#f5f5f5ff', '#f5f5f5ff']} style={styles.gradient}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
@@ -353,7 +356,7 @@ const PasswordRecoveryScreen = ({ navigation }) => {
 
                 {/* Volver al login */}
                 <View style={styles.footer}>
-                  <TouchableOpacity onPress={() => navigation.navigate('Auth')}>
+                  <TouchableOpacity onPress={() => navigation.navigate('EF - Autenticación')}>
                     <Text style={styles.footerLink}>← Volver al inicio de sesión</Text>
                   </TouchableOpacity>
                 </View>
@@ -370,7 +373,7 @@ const PasswordRecoveryScreen = ({ navigation }) => {
         message={alert.message}
         onClose={closeAlert}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -393,7 +396,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 80,
     height: 80,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(0, 0, 0, 0.78)',
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
@@ -408,17 +411,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: 'white',
+    color: 'black',
     marginBottom: 8,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 16,
+    color: 'rgba(0, 0, 0, 0.55)',
     textAlign: 'center',
     paddingHorizontal: 20,
+    fontWeight: 'bold',
   },
   formCard: {
     width: '100%',
@@ -475,9 +479,10 @@ const styles = StyleSheet.create({
   form: { width: '100%' },
   inputContainer: { marginBottom: 16 },
   label: {
-    fontSize: 14,
+    marginLeft: 4,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: '#000000bd',
     marginBottom: 8,
   },
   input: {
@@ -542,13 +547,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 15,
   },
-  // Estilos de alertas
+// Estilos para Alerta Personalizada
   alertOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    // backgroundColor: 'rgba(0, 0, 0, 0.5)', <--- ESTO SE ELIMINA O COMENTA
   },
   alertContainer: {
     width: '100%',
@@ -557,10 +562,16 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 1,
     shadowRadius: 8,
     elevation: 8,
+    borderWidth: 2,
+    borderColor: 'rgba(0, 0, 0, 1)',
+
   },
   alertIconContainer: {
     width: 64,

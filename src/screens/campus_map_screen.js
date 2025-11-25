@@ -21,21 +21,17 @@ import Svg, { Polygon, Text as SvgText } from "react-native-svg";
 const mapImage = require("../../assets/MapConcept2.png");
 const { width } = Dimensions.get("window");
 
-// Tamaño del PNG usado como base para el panning, si la reslución del PNG cambia, tambíen debe cambiase aquí
-const MAP_WIDTH = 1450; 
+// Tamaño del PNG usado para el panning, si la reslución del PNG cambia, tambíen debe cambiarse aquí
+const MAP_WIDTH = 1450;  
 const MAP_HEIGHT = 712;
-/* ------------------------------------------------------------------------- */
 /* Configuración de edificios del campus (un sensor = un edificio)
-   Mantengo los ids existentes y agrego otros para cubrir el mapa FIE. 
    name: etiqueta visible completa en tarjetas
    code: etiqueta corta usada sobre el edificio (A1, LSE, etc.)
-   position: coordenadas relativas dentro del contenedor del mapa (px)
-   shape: 'rect' | 'diamond' para aproximar A1 del plano
-/* ------------------------------------------------------------------------- */
+   position: coordenadas relativas dentro del contenedor del mapa (px) 
+*/
 const campusBuildingsConfig = [
-  // Ids originales (conservados)
   {
-    id: "photon-001", name: "Edificio Principal (A1)",code: "A1", position: { x: 621, y: 368   }, shape: "hex", size: { w: 174, h: 154 },
+    id: "AULA1", name: "Edificio Principal (A1)",code: "A1", position: { x: 621, y: 368   }, shape: "hex", size: { w: 174, h: 154 },
   },
   {
     id: 1, name: "Aulas (A2)",code: "A2", position: { x: 908, y: 390}, size: { w: 200, h: 75 },
@@ -62,7 +58,7 @@ const campusBuildingsConfig = [
     id: "b-le", name: "Laboratorio de Electrónica (LE)", code: "LE", position: { x: 540, y: 257 }, size: { w: 100, h: 75 },
   },
   {
-    id: "b-liot", name: "Laboratorio IoT (LIOT)", code: "LIOT", position: { x: 854, y: 258 }, size: { w: 73, h: 75 },
+    id: "photon-001", name: "Laboratorio IoT (LIOT)", code: "LIOT", position: { x: 854, y: 258 }, size: { w: 73, h: 75 },
   },
   {
     id: "b-se", name: "Sala de Equipos (SE)", code: "SE", position: { x: 470, y: 340 }, size: { w: 80, h: 60 }, borderOnly: true,
@@ -81,6 +77,20 @@ const CampusMapScreen = ({ navigation }) => {
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const lastOffset = useRef({ x: 0, y: 0 });
   const [containerSize, setContainerSize] = useState({ w: width - 40, h: 620 });
+  const containerSizeRef = useRef(containerSize);
+
+  // scale state: how much the original PNG is scaled to fit container width
+  // Compute initial scale so the scaled map covers the container
+  // in at least one dimension (width or height) to avoid it
+  // becoming extremely small on narrow screens.
+  const initialScale = Math.max(
+    (containerSize.w || (width - 40)) / MAP_WIDTH,
+    (containerSize.h || 620) / MAP_HEIGHT,
+  );
+  const [scale, setScale] = useState(initialScale);
+  const scaleRef = useRef(scale);
+  const [scaledSize, setScaledSize] = useState({ w: MAP_WIDTH * scale, h: MAP_HEIGHT * scale });
+  const scaledSizeRef = useRef(scaledSize);
 
   const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
 
@@ -93,12 +103,14 @@ const CampusMapScreen = ({ navigation }) => {
         pan.setValue({ x: 0, y: 0 });
       },
       onPanResponderMove: (e, gesture) => {
-        // compute clamped absolute position
+        // compute clamped absolute position using scaled dimensions
         let newX = lastOffset.current.x + gesture.dx;
         let newY = lastOffset.current.y + gesture.dy;
-        const minX = Math.min(0, containerSize.w - MAP_WIDTH);
+        const cs = containerSizeRef.current;
+        const ss = scaledSizeRef.current;
+        const minX = Math.min(0, cs.w - ss.w);
         const maxX = 0;
-        const minY = Math.min(0, containerSize.h - MAP_HEIGHT);
+        const minY = Math.min(0, cs.h - ss.h);
         const maxY = 0;
         newX = clamp(newX, minX, maxX);
         newY = clamp(newY, minY, maxY);
@@ -109,9 +121,11 @@ const CampusMapScreen = ({ navigation }) => {
       onPanResponderRelease: (e, gesture) => {
         let newX = lastOffset.current.x + gesture.dx;
         let newY = lastOffset.current.y + gesture.dy;
-        const minX = Math.min(0, containerSize.w - MAP_WIDTH);
+        const cs = containerSizeRef.current;
+        const ss = scaledSizeRef.current;
+        const minX = Math.min(0, cs.w - ss.w);
         const maxX = 0;
-        const minY = Math.min(0, containerSize.h - MAP_HEIGHT);
+        const minY = Math.min(0, cs.h - ss.h);
         const maxY = 0;
         newX = clamp(newX, minX, maxX);
         newY = clamp(newY, minY, maxY);
@@ -129,7 +143,7 @@ const CampusMapScreen = ({ navigation }) => {
       const isAuth = await authService.isUserAuthenticated();
       if (!isAuth) {
         // Si no hay sesión, redirigir al login
-        navigation.replace("Auth");
+        navigation.replace("EF - Autenticación");
       }
     };
     checkAuth();
@@ -144,7 +158,7 @@ const CampusMapScreen = ({ navigation }) => {
       );
       if (confirmed) {
         await authService.logout();
-        navigation.replace("Auth");
+        navigation.replace("EF - Autenticación");
       }
     } else {
       Alert.alert(
@@ -160,7 +174,7 @@ const CampusMapScreen = ({ navigation }) => {
             style: "destructive",
             onPress: async () => {
               await authService.logout();
-              navigation.replace("Auth");
+              navigation.replace("EF - Autenticación");
             },
           },
         ],
@@ -310,47 +324,72 @@ const CampusMapScreen = ({ navigation }) => {
 
             {/* 🔵 MAPA PNG INTERACTIVO (reemplaza GOOGLE MAPS) */}
             <View
-              style={styles.mapBox}
-              onLayout={(e) =>
-                setContainerSize({
-                  w: e.nativeEvent.layout.width,
-                  h: e.nativeEvent.layout.height,
-                })
-              }
+              style={[styles.mapBox, { height: containerSize.h }]}
+              onLayout={(e) => {
+                const newSize = { w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height };
+                setContainerSize(newSize);
+                containerSizeRef.current = newSize;
+                // compute scale so scaled map covers the container in
+                // both dimensions (choose the larger ratio). This
+                // prevents the image from shrinking excessively on
+                // narrow screens and avoids white-space when panning.
+                const s = Math.max(newSize.w / MAP_WIDTH, newSize.h / MAP_HEIGHT);
+                setScale(s);
+                scaleRef.current = s;
+                const ss = { w: MAP_WIDTH * s, h: MAP_HEIGHT * s };
+                setScaledSize(ss);
+                scaledSizeRef.current = ss;
+                // ensure pan offsets stay clamped to new sizes
+                const minX = Math.min(0, newSize.w - ss.w);
+                const minY = Math.min(0, newSize.h - ss.h);
+                lastOffset.current.x = clamp(lastOffset.current.x, minX, 0);
+                lastOffset.current.y = clamp(lastOffset.current.y, minY, 0);
+                pan.setOffset({ x: lastOffset.current.x, y: lastOffset.current.y });
+                pan.setValue({ x: 0, y: 0 });
+              }}
             >
               <View style={{ flex: 1, overflow: "hidden" }}>
                 <Animated.View
                   {...panResponder.panHandlers}
                   style={{
-                    width: MAP_WIDTH,
-                    height: MAP_HEIGHT,
+                    width: scaledSize.w,
+                    height: scaledSize.h,
                     transform: [{ translateX: pan.x }, { translateY: pan.y }],
                   }}
                 >
                   <ImageBackground
                     source={mapImage}
-                    style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}
+                    style={{ width: scaledSize.w, height: scaledSize.h }}
                     imageStyle={{ resizeMode: "cover" }}
                   >
                     {/* 🔵 Hotspots interactivos encima del PNG (se mueven con la imagen) */}
                     {(buildingsData.length ? buildingsData : campusBuildingsConfig).map((b) => {
                       const pos = b.position || { x: 0, y: 0 };
                       const size = b.size || { w: 80, h: 40 }; // ajustable
+                      const posX = pos.x * scale;
+                      const posY = pos.y * scale;
+                      const w = size.w * scale;
+                      const h = size.h * scale;
 
                       // Forma del edifico A1 hexagonal
                       if (b.shape === "hex") {
-                        const w = size.w;
-                        const h = size.h;
                         const points = `${w * 0.25},0 ${w * 0.75},0 ${w},${h * 0.5} ${w * 0.75},${h} ${w * 0.25},${h} 0,${h * 0.5}`;
                         return (
                           <Svg
                             key={b.id}
-                            style={{ position: "absolute", left: pos.x, top: pos.y, width: w, height: h }}
+                            style={{
+                              position: "absolute",
+                              left: posX,
+                              top: posY,
+                              width: w,
+                              height: h,
+                              ...(Platform.OS === "web" ? { cursor: "pointer", userSelect: "none", WebkitUserSelect: "none", MozUserSelect: "none" } : {}),
+                            }}
                             viewBox={`0 0 ${w} ${h}`}
                           >
                             <Polygon
                               points={points}
-                              fill= "#6b7280"
+                              fill="#6b7280"
                               opacity={0.35}
                               stroke="#000"
                               strokeWidth={2}
@@ -368,8 +407,10 @@ const CampusMapScreen = ({ navigation }) => {
                               fill="#fff"
                               fontFamily="Arial"
                               fontWeight="800"
-                              fontSize={14}
+                              fontSize={14 * scale}
                               textAnchor="middle"
+                              // prevent the SVG text from capturing pointer events/selection
+                              pointerEvents="none"
                             >
                               {b.code}
                             </SvgText>
@@ -379,8 +420,9 @@ const CampusMapScreen = ({ navigation }) => {
                               fill="#e2e8f0"
                               fontFamily="Arial"
                               fontWeight={600}
-                              fontSize={10}
+                              fontSize={10 * scale}
                               textAnchor="middle"
+                              pointerEvents="none"
                             >
                               {(b.consumption || 0).toFixed(1)} kWh
                             </SvgText>
@@ -401,10 +443,10 @@ const CampusMapScreen = ({ navigation }) => {
                           activeOpacity={0.85}
                           style={{
                             position: "absolute",
-                            left: pos.x,
-                            top: pos.y,
-                            width: size.w,
-                            height: size.h,
+                            left: posX,
+                            top: posY,
+                            width: w,
+                            height: h,
                             justifyContent: "center",
                             alignItems: "center",
                             borderRadius: 6,
@@ -413,13 +455,13 @@ const CampusMapScreen = ({ navigation }) => {
                             borderColor: "#00000055",
                           }}
                         >
-                          <Text style={{ fontWeight: "800", color: "#fff", fontSize: 14 }}>
+                          <Text style={{ fontWeight: "800", color: "#fff", fontSize: 14 * scale }}>
                             {b.code}
                           </Text>
                           <Text
                             style={{
                               fontWeight: "600",
-                              fontSize: 10,
+                              fontSize: 10 * scale,
                               color: "#e2e8f0",
                               marginTop: 2,
                             }}
@@ -596,15 +638,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: "hidden",
   },
-  mapBorder: {
-    position: "absolute",
-    left: 8,
-    top: 8,
-    right: 8,
-    bottom: 8,
-    borderWidth: 2,
-    borderColor: "#2a2a2a55",
-  },
 
   /* Edificios */
   building: {
@@ -617,18 +650,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3,
     elevation: 6,
-  },
-  buildingLabel: {
-    color: "#e6eefc",
-    fontWeight: "800",
-    fontSize: 16,
-    letterSpacing: 1,
-  },
-  buildingConsumption: {
-    color: "#cdd8ea",
-    fontSize: 10,
-    fontWeight: "700",
-    marginTop: 2,
   },
 
   /* Lista inferior */
