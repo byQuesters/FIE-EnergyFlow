@@ -94,6 +94,19 @@ const CampusMapScreen = ({ navigation }) => {
 
   const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
 
+  // Center the map inside the container (used by the compass button)
+  const centerMap = () => {
+    const cs = containerSizeRef.current;
+    const ss = scaledSizeRef.current;
+    if (!cs || !ss) return;
+    const desiredX = clamp((cs.w - ss.w) / 2, Math.min(0, cs.w - ss.w), 0);
+    const desiredY = clamp((cs.h - ss.h) / 2, Math.min(0, cs.h - ss.h), 0);
+    lastOffset.current.x = desiredX;
+    lastOffset.current.y = desiredY;
+    pan.setOffset({ x: desiredX, y: desiredY });
+    pan.setValue({ x: 0, y: 0 });
+  };
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -474,6 +487,30 @@ const CampusMapScreen = ({ navigation }) => {
                   </ImageBackground>
                 </Animated.View>
               </View>
+
+              {/* Compass / Rosa de los vientos (overlay, no se mueve con el mapa) */}
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={centerMap}
+                style={styles.compassContainer}
+              >
+                <Svg width="100%" height="100%" viewBox="0 0 100 100">
+                  <Polygon
+                    points="50,8 60,50 50,42 40,50"
+                    fill="#ef4444"
+                    opacity={0.95}
+                  />
+                  <Polygon
+                    points="50,92 40,50 50,58 60,50"
+                    fill="#374151"
+                    opacity={0.9}
+                  />
+                  <SvgText x="50" y="18" textAnchor="middle" fontWeight="800" fontSize="12" fill="#111">N</SvgText>
+                  <SvgText x="84" y="52" textAnchor="middle" fontWeight="700" fontSize="12" fill="#111">E</SvgText>
+                  <SvgText x="50" y="88" textAnchor="middle" fontWeight="700" fontSize="12" fill="#111">S</SvgText>
+                  <SvgText x="16" y="52" textAnchor="middle" fontWeight="700" fontSize="12" fill="#111">W</SvgText>
+                </Svg>
+              </TouchableOpacity>
             </View>
 
         </View>
@@ -637,6 +674,25 @@ const styles = StyleSheet.create({
     height: 620,
     borderRadius: 10,
     overflow: "hidden",
+  },
+  compassContainer: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "#00000010",
+    zIndex: 9999,
   },
 
   /* Edificios */
