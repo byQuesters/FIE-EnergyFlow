@@ -35,7 +35,7 @@ const MAP_HEIGHT = 712;
 const campusBuildingsConfig = [
   // Ids originales (conservados)
   {
-    id: "photon-001", name: "Edificio Principal (A1)",code: "A1", position: { x: 621, y: 368   }, shape: "hex", size: { w: 174, h: 154 },
+    id: "AULA1", name: "Edificio Principal (A1)",code: "A1", position: { x: 621, y: 368   }, shape: "hex", size: { w: 174, h: 154 },
   },
   {
     id: 1, name: "Aulas (A2)",code: "A2", position: { x: 908, y: 390}, size: { w: 200, h: 75 },
@@ -62,7 +62,7 @@ const campusBuildingsConfig = [
     id: "b-le", name: "Laboratorio de Electrónica (LE)", code: "LE", position: { x: 540, y: 257 }, size: { w: 100, h: 75 },
   },
   {
-    id: "b-liot", name: "Laboratorio IoT (LIOT)", code: "LIOT", position: { x: 854, y: 258 }, size: { w: 73, h: 75 },
+    id: "photon-001", name: "Laboratorio IoT (LIOT)", code: "LIOT", position: { x: 854, y: 258 }, size: { w: 73, h: 75 },
   },
   {
     id: "b-se", name: "Sala de Equipos (SE)", code: "SE", position: { x: 470, y: 340 }, size: { w: 80, h: 60 }, borderOnly: true,
@@ -352,12 +352,19 @@ const CampusMapScreen = ({ navigation }) => {
                         return (
                           <Svg
                             key={b.id}
-                            style={{ position: "absolute", left: pos.x, top: pos.y, width: w, height: h }}
+                            style={{
+                              position: "absolute",
+                              left: pos.x,
+                              top: pos.y,
+                              width: w,
+                              height: h,
+                              ...(Platform.OS === "web" ? { cursor: "pointer", userSelect: "none", WebkitUserSelect: "none", MozUserSelect: "none" } : {}),
+                            }}
                             viewBox={`0 0 ${w} ${h}`}
                           >
                             <Polygon
                               points={points}
-                              fill= "#6b7280"
+                              fill="#6b7280"
                               opacity={0.35}
                               stroke="#000"
                               strokeWidth={2}
@@ -377,6 +384,8 @@ const CampusMapScreen = ({ navigation }) => {
                               fontWeight="800"
                               fontSize={14}
                               textAnchor="middle"
+                              // prevent the SVG text from capturing pointer events/selection
+                              pointerEvents="none"
                             >
                               {b.code}
                             </SvgText>
@@ -388,6 +397,7 @@ const CampusMapScreen = ({ navigation }) => {
                               fontWeight={600}
                               fontSize={10}
                               textAnchor="middle"
+                              pointerEvents="none"
                             >
                               {(b.consumption || 0).toFixed(1)} kWh
                             </SvgText>
