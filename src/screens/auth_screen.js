@@ -13,9 +13,13 @@ import {
   StyleSheet,
   Modal,
   Animated,
+  Image, // ✅ AGREGADO: Importación faltante
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { signInWithEmail, registerUser } from '../../lib/auth';
+
+const LogoUcol = require("../../assets/LogoUCOL.png");
 
 // Componente de Alerta Personalizada
 const CustomAlert = ({ visible, type, title, message, onClose }) => {
@@ -72,7 +76,10 @@ const CustomAlert = ({ visible, type, title, message, onClose }) => {
 
   return (
     <Modal transparent visible={visible} animationType="none">
-      <View style={styles.alertOverlay}>
+      <BlurView intensity={40} // Ajusta qué tan borroso se ve (0 a 100)
+        tint="dark"    // Puede ser 'light', 'dark', 'default'
+        style={styles.alertOverlay}
+      >
         <Animated.View 
           style={[
             styles.alertContainer,
@@ -104,7 +111,7 @@ const CustomAlert = ({ visible, type, title, message, onClose }) => {
             <Text style={styles.alertButtonText}>Entendido</Text>
           </TouchableOpacity>
         </Animated.View>
-      </View>
+      </BlurView>
     </Modal>
   );
 };
@@ -243,8 +250,8 @@ const AuthScreen = ({ navigation }) => {
         if (error.message.includes('ya está registrado') || error.message.includes('ya existe')) {
           showAlert(
             'warning',
-            'Email en uso', 
-            'Este email ya está registrado. Por favor inicia sesión o usa otro email.'
+            'Correo en uso', 
+            'Este Correo ya está registrado. Por favor inicia sesión o usa otro correo.'
           );
         } else {
           showAlert('error', 'Error de registro', error.message);
@@ -278,9 +285,9 @@ const AuthScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <LinearGradient
-        colors={['#6b8e4a', '#93ab6b', '#a8c48e']}
+        colors={['#f5f5f5ff', '#f5f5f5ff', '#f5f5f5ff']}
         style={styles.gradient}
       >
         <KeyboardAvoidingView
@@ -295,9 +302,8 @@ const AuthScreen = ({ navigation }) => {
               {/* Logo y título */}
               <View style={styles.header}>
                 <View style={styles.logoContainer}>
-                  <Text style={styles.logoText}>⚡</Text>
+                  <Image source={LogoUcol} style={styles.logo} resizeMode="contain" />
                 </View>
-                <Text style={styles.title}>Energy Flow</Text>
                 <Text style={styles.subtitle}>Sistema de Monitoreo Energético de la FIE</Text>
               </View>
 
@@ -325,103 +331,108 @@ const AuthScreen = ({ navigation }) => {
 
                 {/* Formulario */}
                 <View style={styles.form}>
-                {/* Campo Nombre (solo en registro) */}
-                {!isLogin && (
+                  {/* Campo Nombre (solo en registro) */}
+                  {!isLogin && (
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.label}>Nombre completo</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Tu nombre"
+                        placeholderTextColor="#94a3b8"
+                        value={formData.name}
+                        onChangeText={(value) => handleInputChange('name', value)}
+                        autoCapitalize="words"
+                      />
+                    </View>
+                  )}
+
+                  {/* Campo Email */}
                   <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Nombre completo</Text>
+                    <Text style={styles.label}>Correo</Text>
                     <TextInput
                       style={styles.input}
-                      placeholder="Tu nombre"
+                      placeholder="ejemplo@ucol.mx"
                       placeholderTextColor="#94a3b8"
-                      value={formData.name}
-                      onChangeText={(value) => handleInputChange('name', value)}
-                      autoCapitalize="words"
+                      value={formData.email}
+                      onChangeText={(value) => handleInputChange('email', value)}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
                     />
                   </View>
-                )}
 
-                {/* Campo Email */}
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Email</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="ejemplo@ucol.mx"
-                    placeholderTextColor="#94a3b8"
-                    value={formData.email}
-                    onChangeText={(value) => handleInputChange('email', value)}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
-
-                {/* Campo Contraseña */}
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Contraseña</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Tu contraseña"
-                    placeholderTextColor="#94a3b8"
-                    value={formData.password}
-                    onChangeText={(value) => handleInputChange('password', value)}
-                    secureTextEntry
-                    autoCapitalize="none"
-                  />
-                  {isLogin && (
-                    <TouchableOpacity 
-                      onPress={() => navigation.navigate('PasswordRecovery')}
-                      style={styles.forgotPassword}
-                    >
-                      <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {/* Campo Confirmar Contraseña (solo en registro) */}
-                {!isLogin && (
+                  {/* Campo Contraseña */}
                   <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Confirmar contraseña</Text>
+                    <Text style={styles.label}>Contraseña</Text>
                     <TextInput
                       style={styles.input}
-                      placeholder="Confirma tu contraseña"
+                      placeholder="Tu contraseña"
                       placeholderTextColor="#94a3b8"
-                      value={formData.confirmPassword}
-                      onChangeText={(value) => handleInputChange('confirmPassword', value)}
+                      value={formData.password}
+                      onChangeText={(value) => handleInputChange('password', value)}
                       secureTextEntry
                       autoCapitalize="none"
                     />
+                    {isLogin && (
+                      <TouchableOpacity 
+                        onPress={() => navigation.navigate('EF - Recuperar Contraseña')}
+                        style={styles.forgotPassword}
+                      >
+                        <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
-                )}
 
-                {/* Botón de Acción */}
-                <TouchableOpacity
-                  onPress={isLogin ? handleLogin : handleRegister}
-                  disabled={loading}
-                  style={[styles.button, loading && styles.buttonDisabled]}
-                >
-                  {loading ? (
-                    <ActivityIndicator color="white" />
-                  ) : (
-                    <Text style={styles.buttonText}>
-                      {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
-                    </Text>
+                  {/* Campo Confirmar Contraseña (solo en registro) */}
+                  {!isLogin && (
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.label}>Confirmar contraseña</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Confirma tu contraseña"
+                        placeholderTextColor="#94a3b8"
+                        value={formData.confirmPassword}
+                        onChangeText={(value) => handleInputChange('confirmPassword', value)}
+                        secureTextEntry
+                        autoCapitalize="none"
+                      />
+                    </View>
                   )}
-                </TouchableOpacity>
 
-                {/* Link para cambiar de modo */}
-                <View style={styles.footer}>
-                  <Text style={styles.footerText}>
-                    {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
-                  </Text>
-                  <TouchableOpacity onPress={toggleMode}>
-                    <Text style={styles.footerLink}>
-                      {isLogin ? 'Regístrate aquí' : 'Inicia sesión aquí'}
-                    </Text>
+                  {/* Botón de Acción */}
+                  <TouchableOpacity
+                    onPress={isLogin ? handleLogin : handleRegister}
+                    disabled={loading}
+                    style={[styles.button, loading && styles.buttonDisabled]}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="white" />
+                    ) : (
+                      <Text style={styles.buttonText}>
+                        {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
+                      </Text>
+                    )}
                   </TouchableOpacity>
+
+                  {/* Link para cambiar de modo */}
+                  <View style={styles.footer}>
+                    <Text style={styles.footerText}>
+                      {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
+                    </Text>
+                    <TouchableOpacity onPress={toggleMode}>
+                      <Text style={styles.footerLink}>
+                        {isLogin ? 'Regístrate aquí' : 'Inicia sesión aquí'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                </View> {/* Cierra form */}
-              </View> {/* Cierra formCard */}
-            </View> {/* Cierra container */}
+              </View>
+              <View style={styles.footer}>
+                <Text style={{ color: '#6b7280', fontSize: 12 }}>
+                    © Derechos Reservados 2025
+                </Text>
+              </View>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </LinearGradient>
@@ -434,7 +445,7 @@ const AuthScreen = ({ navigation }) => {
         message={alert.message}
         onClose={closeAlert}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -457,30 +468,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 48,
+    color: '#1f2937',
   },
   header: {
     alignItems: 'center',
     marginBottom: 32,
   },
   logoContainer: {
-    width: 80,
-    height: 80,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    borderRadius: 40,
+    width: 120,
+    height: 120,
+    backgroundColor: '#f5f5f5ff',
+    borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 8,
   },
-  logoText: {
-    fontSize: 40,
+  logo: {
+    width: '250%',
   },
   title: {
     fontSize: 28,
@@ -492,10 +497,12 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 15,
+    color: '#000000b3',
     textAlign: 'center',
     paddingHorizontal: 20,
+    marginTop: 0,
+    fontWeight: 'bold',
   },
   formCard: {
     width: '100%',
@@ -504,10 +511,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 10,
@@ -553,9 +557,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
+    marginLeft: 4,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: '#000000bd',
     marginBottom: 8,
   },
   input: {
@@ -618,10 +623,10 @@ const styles = StyleSheet.create({
   // Estilos para Alerta Personalizada
   alertOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    // backgroundColor: 'rgba(0, 0, 0, 0.5)', <--- ESTO SE ELIMINA O COMENTA
   },
   alertContainer: {
     width: '100%',
@@ -632,11 +637,14 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 0,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 1,
     shadowRadius: 8,
     elevation: 8,
+    borderWidth: 2,
+    borderColor: 'rgba(0, 0, 0, 1)',
+
   },
   alertIconContainer: {
     width: 64,
