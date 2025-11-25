@@ -228,7 +228,7 @@ const CampusMapScreen = ({ navigation }) => {
 
   const handleBuildingPress = (building) => {
     setSelectedBuilding(building);
-    navigation.navigate("BuildingDashboard", {
+    navigation.navigate("EF - Dashboard de Edificio", {
       buildingId: building.id,
       buildingName: building.name,
       buildingData: building,
@@ -407,7 +407,7 @@ const CampusMapScreen = ({ navigation }) => {
                               stroke="#000"
                               strokeWidth={2}
                               onPress={() =>
-                                navigation.navigate("BuildingDashboard", {
+                                navigation.navigate("EF - Dashboard de Edificio", {
                                   buildingId: b.id,
                                   buildingName: b.name,
                                   buildingData: b,
@@ -447,7 +447,7 @@ const CampusMapScreen = ({ navigation }) => {
                         <TouchableOpacity
                           key={b.id}
                           onPress={() =>
-                            navigation.navigate("BuildingDashboard", {
+                            navigation.navigate("EF - Dashboard de Edificio", {
                               buildingId: b.id,
                               buildingName: b.name,
                               buildingData: b,
