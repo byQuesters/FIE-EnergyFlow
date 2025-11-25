@@ -14,6 +14,9 @@ import { supabase } from '../../lib/supabase';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const DEFAULT_DEVICE_ID = 'photon-001';
+const REFRESH_MS = 60000; // Refresco automático para mantener la serie actualizada
+const SAMPLE_LIMIT = 100; // Tomamos 100 lecturas más recientes para la regresión
+const FUTURE_HORIZON = 5; // Cantidad de periodos futuros estimados que se dibujan
 
 const MLPredictionScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
@@ -26,10 +29,15 @@ const MLPredictionScreen = ({ navigation, route }) => {
   const [series, setSeries] = useState([]);
   const [regressionSeries, setRegressionSeries] = useState([]);
   const [stats, setStats] = useState(null);
+  const [nextPoint, setNextPoint] = useState(null);
+  const [extraAverages, setExtraAverages] = useState([]);
   const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
     fetchLastSamples();
+    const interval = setInterval(fetchLastSamples, REFRESH_MS);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceId]);
 
   useEffect(() => {
@@ -48,19 +56,21 @@ const MLPredictionScreen = ({ navigation, route }) => {
     try {
       const { data, error } = await supabase
         .from('ElectricalData')
-        .select('timestamp, kWhA, kWhB, kWhC')
+        .select('*')
         .eq('device_id', deviceId)
         .order('timestamp', { ascending: false })
-        .limit(100);
+        .limit(SAMPLE_LIMIT);
 
       if (error) throw error;
 
       const ordered = (data || []).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
       setRawData(ordered);
+      computeExtraAverages(ordered);
     } catch (err) {
       console.error('Load regression data error', err);
       setErrorMessage('No pudimos cargar datos recientes. Intenta de nuevo.');
       setRawData([]);
+      setExtraAverages([]);
     } finally {
       setLoading(false);
     }
@@ -145,6 +155,7 @@ const MLPredictionScreen = ({ navigation, route }) => {
     if (!aggregated.length) {
       setRegressionSeries([]);
       setStats(null);
+      setNextPoint(null);
       return;
     }
 
@@ -155,10 +166,68 @@ const MLPredictionScreen = ({ navigation, route }) => {
       label: p.label,
       value: parseFloat((m * idx + b).toFixed(2)),
     }));
+    const futurePoints = [];
+    let lastLabel = aggregated.length ? aggregated[aggregated.length - 1].label : null;
+    for (let i = 1; i <= FUTURE_HORIZON; i++) {
+      lastLabel = getNextLabel(lastLabel, mode);
+      futurePoints.push({
+        label: lastLabel,
+        value: parseFloat((m * (xs.length - 1 + i) + b).toFixed(2)),
+      });
+    }
+    const nextLabel = futurePoints.length ? futurePoints[0].label : null;
+    const nextPredValue = futurePoints.length ? futurePoints[0].value : null;
     const statsObj = computeStats(ys, preds.map((p) => p.value));
 
-    setRegressionSeries(preds);
+    setRegressionSeries([...preds, ...futurePoints]);
+    setNextPoint(nextLabel ? { label: nextLabel, value: nextPredValue } : null);
     setStats({ ...statsObj, slope: m, intercept: b });
+  };
+
+  const getNextLabel = (label, mode) => {
+    if (!label) return null;
+    if (mode === 'year') {
+      const year = Number(label);
+      return `${year + 1}`;
+    }
+    if (mode === 'month') {
+      const [y, m] = label.split('-');
+      const date = new Date(Number(y), Number(m) - 1, 1);
+      date.setMonth(date.getMonth() + 1);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+    const date = new Date(label);
+    date.setDate(date.getDate() + 1);
+    return date.toISOString().slice(0, 10);
+  };
+
+  const computeExtraAverages = (rows = []) => {
+    const fields = [
+      { key: 'V_RMSA', label: 'V RMS A', unit: 'V' },
+      { key: 'V_RMSB', label: 'V RMS B', unit: 'V' },
+      { key: 'V_RMSC', label: 'V RMS C', unit: 'V' },
+      { key: 'I_RMSA', label: 'I RMS A', unit: 'A' },
+      { key: 'I_RMSB', label: 'I RMS B', unit: 'A' },
+      { key: 'I_RMSC', label: 'I RMS C', unit: 'A' },
+      { key: 'PPROM_A', label: 'P Prom A', unit: 'kW' },
+      { key: 'PPROM_B', label: 'P Prom B', unit: 'kW' },
+      { key: 'PPROM_C', label: 'P Prom C', unit: 'kW' },
+      { key: 'kWhA', label: 'kWh A', unit: 'kWh' },
+      { key: 'kWhB', label: 'kWh B', unit: 'kWh' },
+      { key: 'kWhC', label: 'kWh C', unit: 'kWh' },
+    ];
+
+    const results = fields
+      .map((f) => {
+        const values = rows
+          .map((r) => Number(r[f.key]))
+          .filter((v) => Number.isFinite(v));
+        if (!values.length) return null;
+        const avg = values.reduce((s, v) => s + v, 0) / values.length;
+        return { label: f.label, value: avg, unit: f.unit };
+      })
+      .filter(Boolean);
+    setExtraAverages(results);
   };
 
   const formatLabel = (label) => {
@@ -171,25 +240,35 @@ const MLPredictionScreen = ({ navigation, route }) => {
   };
 
   const labelsForChart = useMemo(() => {
-    const total = series.length;
+    const allPoints = [...series, ...regressionSeries.slice(series.length)];
+    const lbls = allPoints.map((p) => formatLabel(p.label));
+    const total = lbls.length;
     const skipEvery = total > 12 ? Math.ceil(total / 12) : 1;
-    return series.map((p, idx) => (idx % skipEvery === 0 ? formatLabel(p.label) : ''));
-  }, [series, granularity]);
+    return lbls.map((label, idx) => (idx % skipEvery === 0 ? label : ''));
+  }, [series, granularity, regressionSeries]);
 
-  const lineChartData = useMemo(() => ({
-    labels: labelsForChart,
-    datasets: [
-      { data: series.map((p) => p.value), color: () => '#3b82f6', strokeWidth: 2, withDots: true },
-      { data: regressionSeries.map((p) => p.value), color: () => '#ef4444', strokeWidth: 2, withDots: false },
-    ],
-  }), [labelsForChart, regressionSeries, series]);
+  const lineChartData = useMemo(() => {
+    const actual = [...series.map((p) => p.value)];
+    const regression = regressionSeries.map((p) => p.value);
+    // Alineamos longitud de actual a la de regression para que chart-kit pinte ambos correctamente
+    while (actual.length < regression.length) {
+      actual.push(null);
+    }
+    return {
+      labels: labelsForChart,
+      datasets: [
+        { data: actual, color: () => '#2563eb', strokeWidth: 2, withDots: true },
+        { data: regression, color: () => '#dc2626', strokeWidth: 2, withDots: true },
+      ],
+    };
+  }, [labelsForChart, regressionSeries, series]);
 
   const barChartData = useMemo(() => ({
-    labels: labelsForChart,
+    labels: series.map((p) => formatLabel(p.label)),
     datasets: [{ data: series.map((p) => p.value) }],
-  }), [labelsForChart, series]);
+  }), [series, granularity]);
 
-  const chartWidth = Math.min(1100, Math.max(320, Platform.OS === 'web' ? 900 : 350));
+  const chartWidth = Math.min(1200, Math.max(360, Platform.OS === 'web' ? 960 : 360));
 
   return (
     <View style={[styles.safeArea, { paddingTop: insets.top }]}>
@@ -237,7 +316,7 @@ const MLPredictionScreen = ({ navigation, route }) => {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Gráfica de regresión</Text>
+          <Text style={styles.cardTitle}>Regresión lineal (100 muestras más recientes)</Text>
           {series.length === 0 ? (
             <Text style={styles.note}>Carga datos para visualizar la tendencia.</Text>
           ) : (
@@ -252,32 +331,16 @@ const MLPredictionScreen = ({ navigation, route }) => {
                 color: (opacity = 1) => `rgba(34,34,34,${opacity})`,
                 labelColor: (opacity = 1) => `rgba(55,65,81,${opacity})`,
                 style: { borderRadius: 16 },
-                propsForDots: { r: '4', strokeWidth: '2', stroke: '#fff' },
+                propsForDots: { r: '5', strokeWidth: '2', stroke: '#fff' },
               }}
               bezier
               style={{ marginVertical: 8, borderRadius: 16 }}
             />
           )}
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Distribución reciente</Text>
-          {series.length === 0 ? (
-            <Text style={styles.note}>Sin datos para graficar.</Text>
-          ) : (
-            <BarChart
-              data={barChartData}
-              width={chartWidth}
-              height={220}
-              chartConfig={{
-                backgroundGradientFrom: '#ffffff',
-                backgroundGradientTo: '#ffffff',
-                decimalPlaces: 2,
-                color: (opacity = 1) => `rgba(5,150,105, ${opacity})`,
-                labelColor: (opacity = 1) => `rgba(55,65,81,${opacity})`,
-              }}
-              style={{ borderRadius: 12, marginTop: 8 }}
-            />
+          {nextPoint && (
+            <Text style={styles.projectionText}>
+              Próximo periodo estimado ({formatLabel(nextPoint.label)}): {nextPoint.value} kWh
+            </Text>
           )}
         </View>
 
@@ -303,6 +366,22 @@ const MLPredictionScreen = ({ navigation, route }) => {
             </View>
           ) : (
             <Text style={styles.note}>Corre la carga para ver estadísticas.</Text>
+          )}
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Promedios variables eléctricas</Text>
+          {extraAverages.length ? (
+            <View style={styles.statsGrid}>
+              {extraAverages.map((item) => (
+                <View key={item.label} style={styles.statItem}>
+                  <Text style={styles.statLabel}>{item.label}</Text>
+                  <Text style={styles.statValue}>{item.value.toFixed(2)} {item.unit}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.note}>Sin lecturas suficientes para promediar.</Text>
           )}
         </View>
 
@@ -338,6 +417,7 @@ const styles = StyleSheet.create({
   statLabel: { color: '#6b7280', fontWeight: '600', marginBottom: 4 },
   statValue: { color: '#111827', fontWeight: '800', fontSize: 16 },
   errorText: { color: '#b91c1c', fontWeight: '600', marginTop: 8 },
+  projectionText: { color: '#065f46', fontWeight: '700', marginTop: 8 },
 });
 
 export default MLPredictionScreen;
