@@ -8,54 +8,63 @@ import {
   Dimensions,
   Platform,
   ActivityIndicator,
+  Alert,
+  StatusBar,
+  ActionSheetIOS,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+
 import { useTheme } from '../contexts/ThemeContext';
 import reportService from '../data/report_service';
 
-const { width } = Dimensions.get('window');
-
 const CFEReportScreen = ({ route, navigation }) => {
-  const { buildingId = 'photon-001', buildingName = 'Edificio Principal'} = route.params || {};
+  const { buildingId = 'photon-001', buildingName = 'Edificio Principal' } = route.params || {};
   const { theme } = useTheme();
   const { colors } = theme;
   const insets = useSafeAreaInsets();
 
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  
+  // Estados para filtros
   const [selectedPeriod, setSelectedPeriod] = useState('ultimos7dias');
+  const [selectedTariff, setSelectedTariff] = useState('DAC'); // 'DAC' | 'GDMTO'
+  
   const [error, setError] = useState(null);
 
   useEffect(() => {
     loadReport();
-  }, [buildingId, selectedPeriod]);
+  }, [buildingId, selectedPeriod, selectedTariff]); // Recargar si cambia tarifa
+
+  const toggleTariff = () => {
+    const newTariff = selectedTariff === 'DAC' ? 'GDMTO' : 'DAC';
+    setSelectedTariff(newTariff);
+    // Alert para confirmar visualmente el cambio
+    Alert.alert("Cambio de Tarifa", `Calculando con tarifa: ${newTariff === 'DAC' ? 'Doméstica Alto Consumo' : 'Comercial GDMTO'}`);
+  };
 
   const loadReport = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Obtener rango de fechas según periodo seleccionado
+      if (!reportService || !reportService.getDateRanges) {
+        throw new Error("Servicio de reportes no disponible");
+      }
+
       const dateRanges = reportService.getDateRanges();
       const range = dateRanges[selectedPeriod];
 
-      console.log(`📊 Generando reporte para ${buildingName}...`);
-      console.log(`📅 Periodo: ${range.label}`);
-      console.log(`🔍 Device ID: ${buildingId}`);
-
-      // CONFIGURACIÓN DEL REPORTE
-      const maxRecords = 10000; // Límite de registros
-      
-      // Factor de corrección: usa 1.0 con el código corregido del Photon
-      // Si sigues viendo valores incorrectos, ajusta este factor
+      // Configuración
+      const maxRecords = 10000; 
       const CORRECTION_FACTOR = 1.0; 
-      
-      // Modo acumulativo: true porque el Photon ahora envía kWh acumulativos
       const USE_ACCUMULATIVE_MODE = true;
 
-      // Generar reporte
       const report = await reportService.generateReport(
         buildingId,
         buildingName,
@@ -63,70 +72,145 @@ const CFEReportScreen = ({ route, navigation }) => {
         range.endDate,
         maxRecords,
         CORRECTION_FACTOR,
-        USE_ACCUMULATIVE_MODE
+        USE_ACCUMULATIVE_MODE,
+        selectedTariff // Pasamos la tarifa seleccionada
       );
 
       if (!report.success) {
-        setError(report.message || 'No hay datos disponibles');
+        setError(report.message || 'No hay datos disponibles para este periodo');
         setReportData(null);
       } else {
-        setReportData(report);
-        console.log('✅ Reporte generado exitosamente');
-        console.log(`💡 Consumo calculado: ${report.consumo.total.toFixed(2)} kWh`);
+        const enrichedData = {
+          ...report,
+          fechaLimitePago: new Date(new Date().setDate(new Date().getDate() + 15)).toLocaleDateString('es-MX'),
+          periodoFacturado: `${formatDateShort(report.periodo.inicio)} - ${formatDateShort(report.periodo.fin)}`,
+          tarifa: report.costos.tarifaNombre, // Usamos el nombre que viene del servicio
+          noMedidor: buildingId.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 10),
+        };
+        setReportData(enrichedData);
       }
     } catch (err) {
-      console.error('❌ Error al cargar reporte:', err);
-      setError('Error al cargar el reporte');
-      setReportData(null);
+      console.error('Error:', err);
+      setError('Error al cargar el reporte.');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDate = (date) => {
-    return date.toLocaleDateString('es-MX', { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
-    }).toUpperCase();
+  const formatDateShort = (date) => {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase();
   };
 
-  const formatDateTime = (dateString) => {
-    return new Date(dateString).toLocaleString('es-MX', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const generatePDF = async () => {
+    if (!reportData) return;
+    setGeneratingPdf(true);
+
+    try {
+      const htmlContent = `
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+            <style>
+              body { font-family: 'Helvetica', sans-serif; color: #333; margin: 0; padding: 20px; background: #fff; }
+              .header { border-bottom: 4px solid #007a3e; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+              .logo-text { color: #007a3e; font-weight: bold; font-size: 24px; }
+              .sub-header { display: flex; justify-content: space-between; margin-bottom: 30px; }
+              .user-info { width: 60%; font-size: 12px; line-height: 1.4; }
+              .total-box { width: 35%; text-align: right; }
+              .total-label { color: #007a3e; font-weight: bold; font-size: 14px; }
+              .total-amount { font-size: 36px; font-weight: bold; color: #000; }
+              .limit-date { font-size: 12px; margin-top: 5px; }
+              .section-title { background-color: #007a3e; color: white; padding: 5px 10px; font-size: 12px; font-weight: bold; margin-bottom: 10px; }
+              table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 20px; }
+              th { text-align: left; border-bottom: 2px solid #ccc; padding: 5px; color: #007a3e; }
+              td { padding: 8px 5px; border-bottom: 1px solid #eee; }
+              .text-right { text-align: right; }
+              .bold { font-weight: bold; }
+              .cost-breakdown { display: flex; justify-content: space-between; }
+              .breakdown-left { width: 48%; }
+              .breakdown-right { width: 48%; border: 1px solid #ccc; padding: 10px; border-radius: 5px; }
+              .footer { margin-top: 40px; text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ccc; padding-top: 10px; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div class="logo-text">CFE</div>
+              <div style="font-size: 10px; text-align: right;">SUMINISTRADOR DE<br/>SERVICIOS BÁSICOS</div>
+            </div>
+            <div class="sub-header">
+              <div class="user-info">
+                <div style="font-size: 16px; font-weight: bold;">${reportData.buildingName}</div>
+                <div>ID MEDIDOR: ${reportData.noMedidor}</div>
+                <div>TARIFA: ${reportData.tarifa}</div>
+                <div>PERIODO: ${reportData.periodoFacturado}</div>
+              </div>
+              <div class="total-box">
+                <div class="total-label">TOTAL A PAGAR</div>
+                <div class="total-amount">$${reportData.costos.total.toFixed(2)} MXN</div>
+                <div class="limit-date">Pagar antes de: <br/><b>${reportData.fechaLimitePago}</b></div>
+              </div>
+            </div>
+            <div class="section-title">DETALLE DE CONSUMO</div>
+            <table>
+              <tr><th>Concepto</th><th class="text-right">Lectura Actual</th><th class="text-right">Lectura Ant.</th><th class="text-right">Total</th></tr>
+              <tr>
+                <td>Energía (kWh)</td>
+                <td class="text-right">${reportData.consumo.final.toFixed(0)}</td>
+                <td class="text-right">${reportData.consumo.inicial.toFixed(0)}</td>
+                <td class="text-right bold">${reportData.consumo.total.toFixed(2)}</td>
+              </tr>
+            </table>
+            <div class="section-title">DESGLOSE DE COSTOS</div>
+            <div class="cost-breakdown">
+              <div class="breakdown-left">
+                <table>
+                  <tr><td>Energía ($${reportData.costos.tarifaPorKwh}/kWh)</td><td class="text-right">$${(reportData.costos.subtotalEnergia - reportData.costos.cargoSuministro).toFixed(2)}</td></tr>
+                  <tr><td>Suministro</td><td class="text-right">$${reportData.costos.cargoSuministro.toFixed(2)}</td></tr>
+                </table>
+              </div>
+              <div class="breakdown-right">
+                <table>
+                  <tr><td>Subtotal</td><td class="text-right">$${reportData.costos.subtotalEnergia.toFixed(2)}</td></tr>
+                  <tr><td>IVA 16%</td><td class="text-right">$${reportData.costos.iva.toFixed(2)}</td></tr>
+                  <tr><td>DAP</td><td class="text-right">$${reportData.costos.dac.toFixed(2)}</td></tr>
+                  <tr style="border-top: 2px solid #333;"><td class="bold">Total</td><td class="text-right bold" style="font-size: 16px;">$${reportData.costos.total.toFixed(2)}</td></tr>
+                </table>
+              </div>
+            </div>
+            <div class="footer">Comisión Federal de Electricidad | Energy Flow Monitor System 2025</div>
+          </body>
+        </html>
+      `;
+
+      const { uri } = await Print.printToFileAsync({ html: htmlContent });
+      await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo generar el PDF.');
+    } finally {
+      setGeneratingPdf(false);
+    }
   };
 
   const periodOptions = [
-    { key: 'hoy', label: 'Hoy' },
-    { key: 'ayer', label: 'Ayer' },
-    { key: 'ultimos7dias', label: '7 días' },
-    { key: 'mesActual', label: 'Mes actual' },
-    { key: 'mesAnterior', label: 'Mes anterior' },
+    { key: 'ultimos7dias', label: 'Semanal' },
+    { key: 'mesActual', label: 'Mes Actual' },
+    { key: 'mesAnterior', label: 'Mes Anterior' },
   ];
 
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-        <LinearGradient
-          colors={colors.headerGradient || ['#1e40af', '#3b82f6']}
-          style={styles.header}
-        >
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <LinearGradient colors={['#007a3e', '#005f30']} style={[styles.header, { paddingTop: insets.top + 10 }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
+            <Ionicons name="arrow-back-outline" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Reporte de Consumo</Text>
-          <View style={styles.downloadButton} />
+          <Text style={styles.headerTitle}>Estado de Cuenta</Text>
+          <View style={{width: 40}} />
         </LinearGradient>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-            Generando reporte...
-          </Text>
+          <ActivityIndicator size="large" color="#007a3e" />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Calculando consumo...</Text>
         </View>
       </View>
     );
@@ -134,28 +218,18 @@ const CFEReportScreen = ({ route, navigation }) => {
 
   if (error || !reportData) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-        <LinearGradient
-          colors={colors.headerGradient || ['#1e40af', '#3b82f6']}
-          style={styles.header}
-        >
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <LinearGradient colors={['#007a3e', '#005f30']} style={[styles.header, { paddingTop: insets.top + 10 }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
+            <Ionicons name="arrow-back-outline" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Reporte de Consumo</Text>
-          <TouchableOpacity onPress={loadReport} style={styles.downloadButton}>
-            <Ionicons name="refresh" size={24} color="#fff" />
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Estado de Cuenta</Text>
+          <View style={{width: 40}} />
         </LinearGradient>
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={64} color={colors.textSecondary} />
-          <Text style={[styles.errorText, { color: colors.textPrimary }]}>
-            {error || 'No hay datos disponibles'}
-          </Text>
-          <TouchableOpacity
-            style={[styles.retryButton, { backgroundColor: colors.primary }]}
-            onPress={loadReport}
-          >
+          <Ionicons name="alert-circle-outline" size={64} color={colors.textSecondary} />
+          <Text style={[styles.errorText, { color: colors.text }]}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadReport}>
             <Text style={styles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
         </View>
@@ -164,396 +238,180 @@ const CFEReportScreen = ({ route, navigation }) => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      {/* Header */}
-      <LinearGradient
-        colors={colors.headerGradient || ['#1e40af', '#3b82f6']}
-        style={styles.header}
-      >
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+      {/* Header con Iconos Estilo Yesicon (Ionicons Outline) */}
+      <LinearGradient colors={['#007a3e', '#005f30']} style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
+          <Ionicons name="arrow-back-outline" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Reporte de Consumo</Text>
-        <TouchableOpacity onPress={loadReport} style={styles.downloadButton}>
-          <Ionicons name="refresh" size={24} color="#fff" />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Estado de Cuenta</Text>
+        
+        <View style={styles.headerActions}>
+          {/* Botón Cambio de Tarifa */}
+          <TouchableOpacity onPress={toggleTariff} style={styles.iconButton}>
+            <Ionicons name={selectedTariff === 'DAC' ? "home-outline" : "business-outline"} size={22} color="#fff" />
+          </TouchableOpacity>
+          
+          {/* Botón Generar PDF */}
+          <TouchableOpacity onPress={generatePDF} style={styles.iconButton} disabled={generatingPdf}>
+            {generatingPdf ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="print-outline" size={24} color="#fff" />
+            )}
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
-      {/* Selector de Periodo */}
-      <View style={[styles.periodSelector, { backgroundColor: colors.card }]}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {periodOptions.map((option) => (
-            <TouchableOpacity
-              key={option.key}
-              style={[
-                styles.periodButton,
-                selectedPeriod === option.key && {
-                  backgroundColor: colors.primary,
-                },
-              ]}
-              onPress={() => setSelectedPeriod(option.key)}
-            >
-              <Text
-                style={[
-                  styles.periodButtonText,
-                  { color: selectedPeriod === option.key ? '#fff' : colors.textSecondary },
-                ]}
-              >
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      {/* Filtros de Periodo */}
+      <View style={styles.periodContainer}>
+        {periodOptions.map((option) => (
+          <TouchableOpacity
+            key={option.key}
+            style={[
+              styles.periodTab, 
+              { backgroundColor: theme.dark ? colors.card : '#e0e0e0' },
+              selectedPeriod === option.key && styles.periodTabActive
+            ]}
+            onPress={() => setSelectedPeriod(option.key)}
+          >
+            <Text style={[
+              styles.periodText, 
+              { color: colors.textSecondary },
+              selectedPeriod === option.key && styles.periodTextActive
+            ]}>
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Header del Reporte */}
-        <View style={[styles.reportHeader, { backgroundColor: colors.card }]}>
-          <View style={styles.buildingInfo}>
-            <View style={styles.buildingIconContainer}>
-              <Ionicons name="business" size={40} color={colors.primary} />
+        
+        {/* TARJETA PRINCIPAL */}
+        <View style={[styles.billCard, { backgroundColor: colors.card, borderTopColor: '#007a3e' }]}>
+          <View style={styles.billHeader}>
+            <View>
+              <Text style={[styles.billLogo, { color: '#007a3e' }]}>CFE</Text>
+              <Text style={[styles.billSlogan, { color: colors.textSecondary }]}>Suministrador de Servicios Básicos</Text>
             </View>
-            <View style={styles.buildingDetails}>
-              <Text style={[styles.buildingName, { color: colors.textPrimary }]}>
-                {reportData.buildingName}
-              </Text>
-              <Text style={[styles.deviceId, { color: colors.textSecondary }]}>
-                Device ID: {reportData.deviceId}
-              </Text>
-              <Text style={[styles.periodText, { color: colors.textSecondary }]}>
-                {formatDate(reportData.periodo.inicio)} - {formatDate(reportData.periodo.fin)}
-              </Text>
-              <Text style={[styles.daysText, { color: colors.textSecondary }]}>
-                {reportData.periodo.dias} día(s) • {reportData.totalRegistros} registros
+            <View style={styles.billTotalContainer}>
+              <Text style={[styles.billTotalLabel, { color: colors.text }]}>TOTAL A PAGAR</Text>
+              <Text style={[styles.billTotalAmount, { color: colors.text }]}>
+                ${Math.floor(reportData.costos.total)}
+                <Text style={[styles.billTotalDecimals, { color: colors.text }]}>.{reportData.costos.total.toFixed(2).split('.')[1] || '00'} </Text>
+                <Text style={[styles.billCurrency, { color: colors.textSecondary }]}>MXN</Text>
               </Text>
             </View>
           </View>
 
-          <View style={styles.updateInfo}>
-            <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-            <Text style={[styles.updateText, { color: colors.textSecondary }]}>
-              Última actualización: {formatDateTime(reportData.valoresActuales.timestamp)}
-            </Text>
+          <View style={[styles.billDivider, { backgroundColor: colors.border }]} />
+
+          <View style={styles.billInfoRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.billLabel, { color: colors.textSecondary }]}>Periodo Facturado</Text>
+              <Text style={[styles.billValue, { color: colors.text }]}>{reportData.periodoFacturado}</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={[styles.billLabel, { color: colors.textSecondary }]}>Límite de Pago</Text>
+              <Text style={[styles.billValue, { color: '#d32f2f' }]}>{reportData.fechaLimitePago}</Text>
+            </View>
+          </View>
+
+          <View style={[styles.consumptionGauge, { backgroundColor: theme.dark ? colors.background : '#f9f9f9' }]}>
+            <View style={styles.gaugeHeader}>
+              <Text style={[styles.gaugeTitle, { color: colors.textSecondary }]}>
+                {selectedTariff === 'DAC' ? 'Consumo Doméstico' : 'Consumo Comercial'}
+              </Text>
+              <Text style={[styles.gaugeValue, { color: reportData.consumo.total > 500 ? '#d32f2f' : '#2e7d32' }]}>
+                {reportData.consumo.total.toFixed(0)} kWh
+              </Text>
+            </View>
+            <View style={[styles.gaugeBarBg, { backgroundColor: theme.dark ? '#374151' : '#ddd' }]}>
+              <LinearGradient
+                colors={['#2e7d32', '#fdd835', '#d32f2f']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={styles.gaugeGradient}
+              />
+              <View 
+                style={[
+                  styles.gaugeIndicator, 
+                  { 
+                    left: `${Math.min((reportData.consumo.total / 1000) * 100, 100)}%`,
+                    backgroundColor: theme.dark ? '#fff' : '#000' 
+                  }
+                ]} 
+              />
+            </View>
+            <View style={styles.gaugeLabels}>
+              <Text style={styles.gaugeLabelText}>Bajo</Text>
+              <Text style={styles.gaugeLabelText}>Medio</Text>
+              <Text style={styles.gaugeLabelText}>Alto</Text>
+            </View>
           </View>
         </View>
 
-        {/* Total a Pagar - Destacado (inspirado en CFE) */}
-        <LinearGradient
-          colors={[colors.primary || '#3b82f6', colors.primaryDark || '#1e40af']}
-          style={styles.totalSection}
-        >
-          <View style={styles.totalContent}>
-            <Text style={styles.totalLabel}>CONSUMO TOTAL DEL PERIODO</Text>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalAmount}>{reportData.consumo.total.toFixed(2)}</Text>
-              <Text style={styles.totalUnit}>kWh</Text>
-            </View>
-            <View style={styles.divider} />
-            <Text style={styles.estimatedCostLabel}>Costo Estimado CFE</Text>
-            <Text style={styles.estimatedCostAmount}>
-              ${reportData.costos.total.toFixed(2)} MXN
-            </Text>
-            <Text style={styles.estimatedNote}>
-              (Incluye IVA • Tarifa: ${reportData.costos.tarifaPorKwh}/kWh)
-            </Text>
-            
-            {/* Advertencia si se alcanzó límite de registros */}
-            {reportData.limitAlcanzado && (
-              <View style={styles.warningBadge}>
-                <Ionicons name="warning" size={16} color="#f59e0b" />
-                <Text style={styles.warningText}>
-                  Límite de {reportData.maxRecords.toLocaleString()} registros alcanzado
-                </Text>
-              </View>
-            )}
+        {/* DETALLE DEL RECIBO */}
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={styles.sectionHeader}>Detalle de la Factura</Text>
+          
+          <View style={[styles.tableHeader, { backgroundColor: theme.dark ? colors.background : '#f0f0f0' }]}>
+            <Text style={[styles.th, { flex: 1, color: colors.textSecondary }]}>Concepto</Text>
+            <Text style={[styles.th, { flex: 1, textAlign: 'right', color: colors.textSecondary }]}>Total</Text>
           </View>
-        </LinearGradient>
-
-        {/* Consumo por Fase */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="pulse" size={24} color={colors.primary} />
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              Distribución de Consumo por Fase
+          <View style={styles.tableRow}>
+            <Text style={[styles.td, { flex: 1, color: colors.text }]}>Energía (kWh)</Text>
+            <Text style={[styles.td, { flex: 1, textAlign: 'right', fontWeight: 'bold', color: colors.text }]}>
+              {reportData.consumo.total.toFixed(0)}
             </Text>
+          </View>
+
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          <View style={styles.costRow}>
+            <Text style={[styles.costLabel, { color: colors.textSecondary }]}>Energía</Text>
+            <Text style={[styles.costValue, { color: colors.text }]}>${reportData.costos.subtotalEnergia.toFixed(2)}</Text>
+          </View>
+          <View style={styles.costRow}>
+            <Text style={[styles.costLabel, { color: colors.textSecondary }]}>IVA 16%</Text>
+            <Text style={[styles.costValue, { color: colors.text }]}>${reportData.costos.iva.toFixed(2)}</Text>
+          </View>
+          <View style={styles.costRow}>
+            <Text style={[styles.costLabel, { color: colors.textSecondary }]}>DAP</Text>
+            <Text style={[styles.costValue, { color: colors.text }]}>${reportData.costos.dac.toFixed(2)}</Text>
           </View>
           
-          <View style={styles.phaseGrid}>
-            <View style={[styles.phaseCard, { backgroundColor: theme.dark ? colors.background : '#fef3c7' }]}>
-              <Text style={[styles.phaseLabel, { color: '#f59e0b' }]}>Fase A</Text>
-              <Text style={[styles.phaseValue, { color: colors.textPrimary }]}>
-                {reportData.consumo.faseA.toFixed(2)}
-              </Text>
-              <Text style={[styles.phaseUnit, { color: colors.textSecondary }]}>kWh</Text>
-              <Text style={[styles.phasePercent, { color: colors.textSecondary }]}>
-                {((reportData.consumo.faseA / reportData.consumo.total) * 100).toFixed(1)}%
-              </Text>
-            </View>
-
-            <View style={[styles.phaseCard, { backgroundColor: theme.dark ? colors.background : '#dbeafe' }]}>
-              <Text style={[styles.phaseLabel, { color: '#3b82f6' }]}>Fase B</Text>
-              <Text style={[styles.phaseValue, { color: colors.textPrimary }]}>
-                {reportData.consumo.faseB.toFixed(2)}
-              </Text>
-              <Text style={[styles.phaseUnit, { color: colors.textSecondary }]}>kWh</Text>
-              <Text style={[styles.phasePercent, { color: colors.textSecondary }]}>
-                {((reportData.consumo.faseB / reportData.consumo.total) * 100).toFixed(1)}%
-              </Text>
-            </View>
-
-            <View style={[styles.phaseCard, { backgroundColor: theme.dark ? colors.background : '#dcfce7' }]}>
-              <Text style={[styles.phaseLabel, { color: '#10b981' }]}>Fase C</Text>
-              <Text style={[styles.phaseValue, { color: colors.textPrimary }]}>
-                {reportData.consumo.faseC.toFixed(2)}
-              </Text>
-              <Text style={[styles.phaseUnit, { color: colors.textSecondary }]}>kWh</Text>
-              <Text style={[styles.phasePercent, { color: colors.textSecondary }]}>
-                {((reportData.consumo.faseC / reportData.consumo.total) * 100).toFixed(1)}%
-              </Text>
-            </View>
+          <View style={[styles.divider, { marginVertical: 10, backgroundColor: colors.border }]} />
+          
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabelText}>Total del Periodo</Text>
+            <Text style={styles.totalValueText}>${reportData.costos.total.toFixed(2)}</Text>
           </View>
         </View>
 
-        {/* Promedios del Periodo */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="analytics" size={24} color={colors.primary} />
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              Promedios del Periodo
-            </Text>
+        {/* Datos Técnicos */}
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <Text style={styles.sectionHeader}>Información del Servicio</Text>
+          <View style={styles.techRow}>
+            <Ionicons name="location-outline" size={20} color={colors.textSecondary} />
+            <Text style={[styles.techText, { color: colors.textSecondary }]}>{reportData.buildingName}</Text>
           </View>
-
-          {/* Voltajes Promedio */}
-          <View style={styles.metricsGroup}>
-            <Text style={[styles.metricsGroupTitle, { color: colors.textSecondary }]}>
-              Voltajes Promedio (V)
-            </Text>
-            <View style={styles.metricsRow}>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Fase A</Text>
-                <Text style={[styles.metricValue, { color: '#f59e0b' }]}>
-                  {reportData.promedios.voltajes.faseA.toFixed(1)} V
-                </Text>
-              </View>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Fase B</Text>
-                <Text style={[styles.metricValue, { color: '#3b82f6' }]}>
-                  {reportData.promedios.voltajes.faseB.toFixed(1)} V
-                </Text>
-              </View>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Fase C</Text>
-                <Text style={[styles.metricValue, { color: '#10b981' }]}>
-                  {reportData.promedios.voltajes.faseC.toFixed(1)} V
-                </Text>
-              </View>
-            </View>
+          <View style={styles.techRow}>
+            <Ionicons name="barcode-outline" size={20} color={colors.textSecondary} />
+            <Text style={[styles.techText, { color: colors.textSecondary }]}>Medidor: {reportData.noMedidor}</Text>
           </View>
-
-          {/* Corrientes Promedio */}
-          <View style={styles.metricsGroup}>
-            <Text style={[styles.metricsGroupTitle, { color: colors.textSecondary }]}>
-              Corrientes Promedio (A)
-            </Text>
-            <View style={styles.metricsRow}>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Fase A</Text>
-                <Text style={[styles.metricValue, { color: '#f59e0b' }]}>
-                  {reportData.promedios.corrientes.faseA.toFixed(2)} A
-                </Text>
-              </View>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Fase B</Text>
-                <Text style={[styles.metricValue, { color: '#3b82f6' }]}>
-                  {reportData.promedios.corrientes.faseB.toFixed(2)} A
-                </Text>
-              </View>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Fase C</Text>
-                <Text style={[styles.metricValue, { color: '#10b981' }]}>
-                  {reportData.promedios.corrientes.faseC.toFixed(2)} A
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Potencia Promedio */}
-          <View style={styles.metricsGroup}>
-            <Text style={[styles.metricsGroupTitle, { color: colors.textSecondary }]}>
-              Potencia Promedio (kW)
-            </Text>
-            <View style={styles.metricsRow}>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Fase A</Text>
-                <Text style={[styles.metricValue, { color: '#f59e0b' }]}>
-                  {reportData.promedios.potencias.faseA.toFixed(2)} kW
-                </Text>
-              </View>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Fase B</Text>
-                <Text style={[styles.metricValue, { color: '#3b82f6' }]}>
-                  {reportData.promedios.potencias.faseB.toFixed(2)} kW
-                </Text>
-              </View>
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Fase C</Text>
-                <Text style={[styles.metricValue, { color: '#10b981' }]}>
-                  {reportData.promedios.potencias.faseC.toFixed(2)} kW
-                </Text>
-              </View>
-            </View>
-            <View style={[styles.totalPowerRow, { backgroundColor: theme.dark ? '#1f2937' : '#f9fafb' }]}>
-              <Text style={[styles.totalPowerLabel, { color: colors.textPrimary }]}>
-                Potencia Total Promedio
-              </Text>
-              <Text style={[styles.totalPowerValue, { color: colors.primary }]}>
-                {reportData.promedios.potencias.total.toFixed(2)} kW
-              </Text>
-            </View>
+          <View style={styles.techRow}>
+            <Ionicons name="flash-outline" size={20} color={colors.textSecondary} />
+            <Text style={[styles.techText, { color: colors.textSecondary }]}>Tarifa: {reportData.tarifa}</Text>
           </View>
         </View>
 
-        {/* Valores Actuales */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="flash" size={24} color={colors.primary} />
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              Última Lectura del Periodo
-            </Text>
-          </View>
-
-          <View style={styles.currentValuesGrid}>
-            <View style={[styles.currentCard, { backgroundColor: theme.dark ? colors.background : '#fff7ed' }]}>
-              <Text style={[styles.currentCardTitle, { color: colors.textSecondary }]}>
-                Voltajes RMS (V)
-              </Text>
-              <View style={styles.currentCardValues}>
-                <Text style={[styles.currentCardValue, { color: '#f59e0b' }]}>
-                  A: {reportData.valoresActuales.voltajes.faseA.toFixed(1)}
-                </Text>
-                <Text style={[styles.currentCardValue, { color: '#3b82f6' }]}>
-                  B: {reportData.valoresActuales.voltajes.faseB.toFixed(1)}
-                </Text>
-                <Text style={[styles.currentCardValue, { color: '#10b981' }]}>
-                  C: {reportData.valoresActuales.voltajes.faseC.toFixed(1)}
-                </Text>
-              </View>
-            </View>
-
-            <View style={[styles.currentCard, { backgroundColor: theme.dark ? colors.background : '#eff6ff' }]}>
-              <Text style={[styles.currentCardTitle, { color: colors.textSecondary }]}>
-                Corrientes RMS (A)
-              </Text>
-              <View style={styles.currentCardValues}>
-                <Text style={[styles.currentCardValue, { color: '#f59e0b' }]}>
-                  A: {reportData.valoresActuales.corrientes.faseA.toFixed(2)}
-                </Text>
-                <Text style={[styles.currentCardValue, { color: '#3b82f6' }]}>
-                  B: {reportData.valoresActuales.corrientes.faseB.toFixed(2)}
-                </Text>
-                <Text style={[styles.currentCardValue, { color: '#10b981' }]}>
-                  C: {reportData.valoresActuales.corrientes.faseC.toFixed(2)}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Desglose de Costos (inspirado en CFE) */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="cash" size={24} color={colors.primary} />
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              Desglose de Costos Estimados
-            </Text>
-          </View>
-
-          <View style={styles.costBreakdown}>
-            <View style={styles.costRow}>
-              <Text style={[styles.costLabel, { color: colors.textSecondary }]}>
-                Consumo Total
-              </Text>
-              <Text style={[styles.costValue, { color: colors.textPrimary }]}>
-                {reportData.consumo.total.toFixed(2)} kWh
-              </Text>
-            </View>
-
-            <View style={styles.costRow}>
-              <Text style={[styles.costLabel, { color: colors.textSecondary }]}>
-                Tarifa CFE (Estimada)
-              </Text>
-              <Text style={[styles.costValue, { color: colors.textPrimary }]}>
-                ${reportData.costos.tarifaPorKwh.toFixed(2)} / kWh
-              </Text>
-            </View>
-
-            <View style={[styles.costRow, styles.costDivider]}>
-              <Text style={[styles.costLabel, { color: colors.textSecondary }]}>
-                Subtotal Energía
-              </Text>
-              <Text style={[styles.costValue, { color: colors.textPrimary }]}>
-                ${reportData.costos.subtotalEnergia.toFixed(2)}
-              </Text>
-            </View>
-
-            <View style={styles.costRow}>
-              <Text style={[styles.costLabel, { color: colors.textSecondary }]}>
-                IVA (16%)
-              </Text>
-              <Text style={[styles.costValue, { color: colors.textPrimary }]}>
-                ${reportData.costos.iva.toFixed(2)}
-              </Text>
-            </View>
-
-            <View style={styles.costRow}>
-              <Text style={[styles.costLabel, { color: colors.textSecondary }]}>
-                DAC (3%)
-              </Text>
-              <Text style={[styles.costValue, { color: colors.textSecondary }]}>
-                ${reportData.costos.dac.toFixed(2)}
-              </Text>
-            </View>
-
-            <View style={[styles.costRow, styles.totalCostRow]}>
-              <Text style={[styles.totalCostLabel, { color: colors.textPrimary }]}>
-                TOTAL ESTIMADO
-              </Text>
-              <Text style={[styles.totalCostValue, { color: '#10b981' }]}>
-                ${reportData.costos.total.toFixed(2)}
-              </Text>
-            </View>
-          </View>
-
-          <View style={[styles.noteBox, { backgroundColor: theme.dark ? '#1f2937' : '#f0fdf4' }]}>
-            <Ionicons name="information-circle" size={20} color="#10b981" />
-            <Text style={[styles.noteText, { color: colors.textSecondary }]}>
-              Los costos son estimados basados en tarifa promedio CFE DAC. El costo real puede
-              variar según tu contrato específico y región.
-            </Text>
-          </View>
-        </View>
-
-        {/* Información adicional */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <View style={styles.infoRow}>
-            <Ionicons name="server" size={20} color={colors.primary} />
-            <Text style={[styles.infoText, { color: colors.textPrimary }]}>
-              Datos históricos desde Supabase
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="calculator" size={20} color={colors.primary} />
-            <Text style={[styles.infoText, { color: colors.textPrimary }]}>
-              Cálculos basados en {reportData.totalRegistros} lecturas
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="calendar" size={20} color={colors.primary} />
-            <Text style={[styles.infoText, { color: colors.textPrimary }]}>
-              Periodo de {reportData.periodo.dias} día(s)
-            </Text>
-          </View>
-        </View>
+        <TouchableOpacity style={styles.generatePdfBtn} onPress={generatePDF}>
+          <Ionicons name="document-text-outline" size={20} color="#fff" />
+          <Text style={styles.generatePdfText}>Descargar PDF Oficial</Text>
+        </TouchableOpacity>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -562,443 +420,80 @@ const CFEReportScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    marginTop: 16,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  errorText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 16,
-    marginBottom: 24,
-  },
-  retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    flex: 1,
-    textAlign: 'center',
-  },
-  downloadButton: {
-    padding: 8,
-  },
-  periodSelector: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  periodButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginHorizontal: 4,
-    backgroundColor: '#f3f4f6',
-  },
-  periodButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-
-  // Header del Reporte
-  reportHeader: {
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  buildingInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  buildingIconContainer: {
-    marginRight: 16,
-  },
-  buildingDetails: {
-    flex: 1,
-  },
-  buildingName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  deviceId: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  periodText: {
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  daysText: {
-    fontSize: 12,
-    fontStyle: 'italic',
-  },
-  updateInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  updateText: {
-    fontSize: 11,
-    marginLeft: 6,
-  },
-
-  // Total Section (inspirado en CFE)
-  totalSection: {
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 6,
-      },
-    }),
-  },
-  totalContent: {
-    alignItems: 'center',
-  },
-  totalLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 1,
-    marginBottom: 12,
-    opacity: 0.9,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 16,
-  },
-  totalAmount: {
-    fontSize: 56,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  totalUnit: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#fff',
-    marginLeft: 8,
-    opacity: 0.9,
-  },
-  divider: {
-    height: 1,
-    width: '100%',
-    backgroundColor: '#fff',
-    opacity: 0.3,
-    marginVertical: 16,
-  },
-  estimatedCostLabel: {
-    fontSize: 14,
-    color: '#fff',
-    marginBottom: 8,
-    opacity: 0.9,
-  },
-  estimatedCostAmount: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
-  },
-  estimatedNote: {
-    fontSize: 11,
-    color: '#fff',
-    opacity: 0.8,
-  },
-  warningBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.5)',
-  },
-  warningText: {
-    fontSize: 11,
-    color: '#fff',
-    marginLeft: 6,
-    fontWeight: '600',
-  },
-
-  // Secciones
-  section: {
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 10,
-  },
-
-  // Fase Grid
-  phaseGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  phaseCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  phaseLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  phaseValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  phaseUnit: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  phasePercent: {
-    fontSize: 11,
-    fontStyle: 'italic',
-  },
-
-  // Metrics
-  metricsGroup: {
-    marginBottom: 20,
-  },
-  metricsGroupTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  metricItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  metricLabel: {
-    fontSize: 12,
-    marginBottom: 6,
-  },
-  metricValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  totalPowerRow: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 8,
+    paddingBottom: 15,
+    paddingHorizontal: 15,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
   },
-  totalPowerLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  totalPowerValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
+  headerActions: { flexDirection: 'row' },
+  iconButton: { padding: 8 }, // Botones más grandes y fáciles de tocar
+  headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', flex: 1, textAlign: 'center' },
+  
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 10, fontSize: 16 },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  errorText: { textAlign: 'center', marginBottom: 20, fontSize: 16 },
+  retryButton: { backgroundColor: '#007a3e', padding: 12, borderRadius: 8 },
+  retryButtonText: { color: '#fff', fontWeight: 'bold' },
 
-  // Current Values
-  currentValuesGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  currentCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    marginHorizontal: 4,
-  },
-  currentCardTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  currentCardValues: {
-    alignItems: 'center',
-  },
-  currentCardValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 6,
-  },
+  periodContainer: { flexDirection: 'row', justifyContent: 'center', marginVertical: 15, paddingHorizontal: 10 },
+  periodTab: { paddingVertical: 6, paddingHorizontal: 16, borderRadius: 20, marginHorizontal: 5 },
+  periodTabActive: { backgroundColor: '#007a3e' },
+  periodText: { fontSize: 13, fontWeight: '600' },
+  periodTextActive: { color: '#fff' },
 
-  // Cost Breakdown
-  costBreakdown: {
-    marginTop: 8,
-  },
-  costRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  costDivider: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#d1d5db',
-    marginTop: 8,
-    paddingTop: 16,
-  },
-  costLabel: {
-    fontSize: 14,
-  },
-  costValue: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  totalCostRow: {
-    backgroundColor: '#f0fdf4',
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginTop: 12,
-    borderWidth: 2,
-    borderColor: '#10b981',
-    borderBottomWidth: 2,
-  },
-  totalCostLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  totalCostValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
+  content: { paddingHorizontal: 15 },
 
-  // Note Box
-  noteBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 16,
-  },
-  noteText: {
-    fontSize: 12,
-    marginLeft: 10,
-    flex: 1,
-    lineHeight: 18,
-  },
+  billCard: { borderRadius: 10, padding: 20, marginBottom: 20, elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, borderTopWidth: 6 },
+  billHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  billLogo: { fontSize: 28, fontWeight: '900', letterSpacing: 1 },
+  billSlogan: { fontSize: 10, width: 120 },
+  billTotalContainer: { alignItems: 'flex-end' },
+  billTotalLabel: { fontSize: 12, fontWeight: 'bold' },
+  billTotalAmount: { fontSize: 28, fontWeight: 'bold' },
+  billTotalDecimals: { fontSize: 16 },
+  billCurrency: { fontSize: 12 },
+  
+  billDivider: { height: 1, marginVertical: 15 },
+  billInfoRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  billLabel: { fontSize: 12, marginBottom: 2 },
+  billValue: { fontSize: 14, fontWeight: 'bold' },
 
-  // Info Row
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  infoText: {
-    fontSize: 13,
-    marginLeft: 12,
-    flex: 1,
-  },
+  consumptionGauge: { marginTop: 20, padding: 10, borderRadius: 8 },
+  gaugeHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  gaugeTitle: { fontSize: 12, fontWeight: 'bold' },
+  gaugeValue: { fontSize: 12, fontWeight: 'bold' },
+  gaugeBarBg: { height: 10, borderRadius: 5, overflow: 'hidden', position: 'relative' },
+  gaugeGradient: { width: '100%', height: '100%' },
+  gaugeIndicator: { position: 'absolute', top: 0, bottom: 0, width: 4, borderRadius: 2, zIndex: 2 },
+  gaugeLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
+  gaugeLabelText: { fontSize: 10, color: '#888' },
+
+  sectionCard: { borderRadius: 10, padding: 15, marginBottom: 15, elevation: 2 },
+  sectionHeader: { fontSize: 16, fontWeight: 'bold', color: '#007a3e', marginBottom: 15 },
+  tableHeader: { flexDirection: 'row', padding: 8, borderRadius: 4, marginBottom: 5 },
+  th: { fontSize: 11, fontWeight: 'bold' },
+  tableRow: { flexDirection: 'row', padding: 8 },
+  td: { fontSize: 12 },
+  divider: { height: 1, marginVertical: 8 },
+  costRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 3 },
+  costLabel: { fontSize: 13 },
+  costValue: { fontSize: 13 },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
+  totalLabelText: { fontSize: 16, fontWeight: 'bold', color: '#007a3e' },
+  totalValueText: { fontSize: 18, fontWeight: 'bold', color: '#007a3e' },
+  techRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  techText: { marginLeft: 10, fontSize: 13 },
+
+  generatePdfBtn: { flexDirection: 'row', backgroundColor: '#007a3e', padding: 15, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginVertical: 10, elevation: 3 },
+  generatePdfText: { color: '#fff', fontWeight: 'bold', fontSize: 16, marginLeft: 10 },
 });
 
 export default CFEReportScreen;
