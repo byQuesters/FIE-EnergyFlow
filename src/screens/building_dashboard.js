@@ -34,7 +34,37 @@ const BuildingDashboard = ({ route, navigation }) => {
   const { theme } = useTheme();
   const { colors } = theme;
 
-  // Reconstruir dataset de gráfica cuando cambien los datos O los colores
+  // ---------------------------------------------------------------------------
+  // Lógica de colores por Fase
+  // ---------------------------------------------------------------------------
+  const getPhaseStyle = (label) => {
+    const l = label.toUpperCase();
+    
+    // Definición de colores adaptativos (Light / Dark)
+    const redBg = theme.dark ? '#450a0a' : '#fee2e2'; 
+    const redBorder = theme.dark ? '#991b1b' : '#fca5a5';
+    
+    const blueBg = theme.dark ? '#172554' : '#dbeafe';
+    const blueBorder = theme.dark ? '#1e40af' : '#93c5fd';
+    
+    const yellowBg = theme.dark ? '#422006' : '#fef9c3'; 
+    const yellowBorder = theme.dark ? '#a16207' : '#fde047';
+
+    const defaultBg = theme.dark ? colors.background : '#f8fafc';
+
+    if (l.endsWith(' CA') || l.endsWith(' C')) {
+      return { backgroundColor: yellowBg, borderColor: yellowBorder, borderWidth: 1 };
+    }
+    if (l.endsWith(' BC') || l.endsWith(' B')) {
+      return { backgroundColor: blueBg, borderColor: blueBorder, borderWidth: 1 };
+    }
+    if (l.endsWith(' AB') || l.endsWith(' A')) {
+      return { backgroundColor: redBg, borderColor: redBorder, borderWidth: 1 };
+    }
+
+    return { backgroundColor: defaultBg, borderColor: 'transparent', borderWidth: 0 };
+  };
+
   useEffect(() => {
     if (recentData.length > 0) {
       setHourlyChart(buildHourlyChart(recentData));
@@ -51,7 +81,6 @@ const BuildingDashboard = ({ route, navigation }) => {
       datasets: [
         {
           data,
-          // Color de la línea de datos
           color: () => colors.chartLine || (theme.dark ? '#60a5fa' : '#3b82f6'),
           strokeWidth: 2,
         },
@@ -71,10 +100,7 @@ const BuildingDashboard = ({ route, navigation }) => {
     checkAuth();
   }, [navigation]);
 
-  // Función corregida para forzar la recarga del Mapa al regresar
   const handleBackToMap = () => {
-    // En lugar de goBack(), reseteamos el stack para que 'EF - Mapa del Campus'
-    // se monte desde cero. Esto arregla el problema de imágenes en blanco en Web.
     navigation.reset({
       index: 0,
       routes: [{ name: 'EF - Mapa del Campus' }],
@@ -137,7 +163,6 @@ const BuildingDashboard = ({ route, navigation }) => {
     );
   }
 
-  // Determinamos el color de fondo con fallback a colors.card si chartBackground falla
   const bgColor = colors.chartBackground || colors.card || (theme.dark ? '#1f2937' : '#ffffff');
 
   const chartConfig = {
@@ -145,12 +170,10 @@ const BuildingDashboard = ({ route, navigation }) => {
     backgroundGradientFrom: bgColor,
     backgroundGradientTo: bgColor,
     decimalPlaces: 1,
-    // Color base (afecta gradientes bajo la línea y otros elementos)
     color: (opacity = 1) => `rgba(${theme.dark ? '96, 165, 250' : '59, 130, 246'}, ${opacity})`,
-    // Color de las etiquetas (Ejes X e Y)
     labelColor: (opacity = 1) => {
-       if (theme.dark) return `rgba(229, 231, 235, ${opacity})`; // Gris muy claro para oscuro
-       return `rgba(55, 65, 81, ${opacity})`; // Gris oscuro para claro
+       if (theme.dark) return `rgba(229, 231, 235, ${opacity})`; 
+       return `rgba(55, 65, 81, ${opacity})`;
     },
     style: { borderRadius: 16 },
     propsForDots: {
@@ -162,7 +185,6 @@ const BuildingDashboard = ({ route, navigation }) => {
 
   const barChartConfig = {
     ...chartConfig,
-    // Sobrescribimos el color principal para las barras (Verde)
     color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
   };
 
@@ -217,73 +239,105 @@ const BuildingDashboard = ({ route, navigation }) => {
         </LinearGradient>
       </View>
 
+      {/* =========================================
+        VOLTAJES: Divididos en 2 Columnas
+        =========================================
+      */}
       <View style={[styles.dataCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>Voltajes RMS (V)</Text>
-        <View style={styles.dataGrid}>
-          {[
-            { l: 'V RMS A', v: currentData.realTimeData.V_RMSA },
-            { l: 'V RMS B', v: currentData.realTimeData.V_RMSB },
-            { l: 'V RMS C', v: currentData.realTimeData.V_RMSC },
-            { l: 'V RMS AB', v: currentData.realTimeData.V_RMSAB },
-            { l: 'V RMS BC', v: currentData.realTimeData.V_RMSBC },
-            { l: 'V RMS CA', v: currentData.realTimeData.V_RMSCA }
-          ].map((item, i) => (
-            <View key={i} style={[styles.dataItem, { backgroundColor: theme.dark ? colors.background : '#f8fafc' }]}>
-              <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>{item.l}</Text>
-              <Text style={[styles.dataValue, { color: colors.primary }]}>{item.v}</Text>
-            </View>
-          ))}
+        
+        <View style={styles.splitGrid}>
+          {/* Columna Izquierda: Fase Neutro (A, B, C) */}
+          <View style={styles.splitColumn}>
+            {[
+              { l: 'V RMS A', v: currentData.realTimeData.V_RMSA },
+              { l: 'V RMS B', v: currentData.realTimeData.V_RMSB },
+              { l: 'V RMS C', v: currentData.realTimeData.V_RMSC },
+            ].map((item, i) => (
+              <View key={i} style={[styles.dataItemFull, getPhaseStyle(item.l)]}>
+                <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>{item.l}</Text>
+                <Text style={[styles.dataValue, { color: colors.primary }]}>{item.v}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Columna Derecha: Fase Fase (AB, BC, CA) */}
+          <View style={styles.splitColumn}>
+            {[
+              { l: 'V RMS AB', v: currentData.realTimeData.V_RMSAB },
+              { l: 'V RMS BC', v: currentData.realTimeData.V_RMSBC },
+              { l: 'V RMS CA', v: currentData.realTimeData.V_RMSCA }
+            ].map((item, i) => (
+              <View key={i} style={[styles.dataItemFull, getPhaseStyle(item.l)]}>
+                <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>{item.l}</Text>
+                <Text style={[styles.dataValue, { color: colors.primary }]}>{item.v}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </View>
 
+      {/* =========================================
+        CORRIENTES: Los 3 en una sola línea
+        =========================================
+      */}
       <View style={[styles.dataCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>Corrientes RMS (A)</Text>
-        <View style={styles.dataGrid}>
+        <View style={styles.triGrid}>
           {[
             { l: 'I RMS A', v: currentData.realTimeData.I_RMSA },
             { l: 'I RMS B', v: currentData.realTimeData.I_RMSB },
             { l: 'I RMS C', v: currentData.realTimeData.I_RMSC }
           ].map((item, i) => (
-            <View key={i} style={[styles.dataItem, { backgroundColor: theme.dark ? colors.background : '#f8fafc' }]}>
-              <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>{item.l}</Text>
-              <Text style={[styles.dataValue, { color: colors.primary }]}>{item.v}</Text>
+            <View key={i} style={[styles.dataItemThird, getPhaseStyle(item.l)]}>
+              <Text style={[styles.dataLabelSmall, { color: colors.textSecondary }]}>{item.l}</Text>
+              <Text style={[styles.dataValueSmall, { color: colors.primary }]}>{item.v}</Text>
             </View>
           ))}
         </View>
       </View>
 
+      {/* =========================================
+        POTENCIA: Los 3 en una sola línea
+        =========================================
+      */}
       <View style={[styles.dataCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.cardTitle, { color: colors.text }]}>Potencia Promedio (kW)</Text>
-        <View style={styles.dataGrid}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>Potencia Prom. (kW)</Text>
+        <View style={styles.triGrid}>
            {[
             { l: 'P PROM A', v: currentData.realTimeData.PPROM_A },
             { l: 'P PROM B', v: currentData.realTimeData.PPROM_B },
             { l: 'P PROM C', v: currentData.realTimeData.PPROM_C }
           ].map((item, i) => (
-            <View key={i} style={[styles.dataItem, { backgroundColor: theme.dark ? colors.background : '#f8fafc' }]}>
-              <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>{item.l}</Text>
-              <Text style={[styles.dataValue, { color: colors.primary }]}>{item.v}</Text>
+            <View key={i} style={[styles.dataItemThird, getPhaseStyle(item.l)]}>
+              <Text style={[styles.dataLabelSmall, { color: colors.textSecondary }]}>{item.l}</Text>
+              <Text style={[styles.dataValueSmall, { color: colors.primary }]}>{item.v}</Text>
             </View>
           ))}
         </View>
       </View>
 
+      {/* =========================================
+        ENERGÍA: Los 3 en una sola línea
+        =========================================
+      */}
       <View style={[styles.dataCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>Energía (kWh)</Text>
-        <View style={styles.dataGrid}>
+        <View style={styles.triGrid}>
            {[
             { l: 'kWh A', v: currentData.realTimeData.kWhA },
             { l: 'kWh B', v: currentData.realTimeData.kWhB },
             { l: 'kWh C', v: currentData.realTimeData.kWhC }
           ].map((item, i) => (
-            <View key={i} style={[styles.dataItem, { backgroundColor: theme.dark ? colors.background : '#f8fafc' }]}>
-              <Text style={[styles.dataLabel, { color: colors.textSecondary }]}>{item.l}</Text>
-              <Text style={[styles.dataValue, { color: colors.primary }]}>{item.v}</Text>
+            <View key={i} style={[styles.dataItemThird, getPhaseStyle(item.l)]}>
+              <Text style={[styles.dataLabelSmall, { color: colors.textSecondary }]}>{item.l}</Text>
+              <Text style={[styles.dataValueSmall, { color: colors.primary }]}>{item.v}</Text>
             </View>
           ))}
         </View>
       </View>
 
+      {/* Últimos 5 registros */}
       <View style={[styles.dataCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>Últimos 5 Registros</Text>
         {recentData.map((row, idx) => (
@@ -318,7 +372,6 @@ const BuildingDashboard = ({ route, navigation }) => {
 
       <View style={[styles.chartCard, { backgroundColor: colors.card }]}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>Consumo por Hora (kWh)</Text>
-        {/* AGREGAMOS KEY PARA FORZAR RE-RENDER AL CAMBIAR DE TEMA */}
         <LineChart
           key={theme.dark ? 'dark-line-chart' : 'light-line-chart'}
           data={hourlyChart || currentData.chartData.hourly}
@@ -332,7 +385,6 @@ const BuildingDashboard = ({ route, navigation }) => {
 
       <View style={[styles.chartCard, { backgroundColor: colors.card }]}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>Distribución por Fase (%)</Text>
-        {/* AGREGAMOS KEY PARA FORZAR RE-RENDER AL CAMBIAR DE TEMA */}
         <BarChart
           key={theme.dark ? 'dark-bar-chart' : 'light-bar-chart'}
           data={currentData.chartData.phases}
@@ -379,7 +431,7 @@ const BuildingDashboard = ({ route, navigation }) => {
         <View style={styles.headerContent}>
           <TouchableOpacity 
             style={[styles.backButton, { borderColor: 'rgba(255,255,255,0.4)' }]}
-            onPress={handleBackToMap} // USAMOS LA FUNCIÓN CORREGIDA
+            onPress={handleBackToMap}
           >
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
@@ -527,7 +579,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   headerTitle: {
-    fontSize: 20, // Reducido un poco para dar espacio a botones
+    fontSize: 20, 
     fontWeight: 'bold',
     color: 'white',
     textAlign: 'center',
@@ -585,7 +637,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Estilo para el botón de Settings
   settingsButtonHeader: {
     backgroundColor: 'rgba(255,255,255,0.16)',
     padding: 6,
@@ -671,11 +722,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 15,
   },
-  dataGrid: {
+  // Nuevos estilos para layout dividido (Voltaje)
+  splitGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
+  splitColumn: {
+    width: '48%',
+  },
+  // Nuevos estilos para layout de 3 (Corriente, Potencia, Energía)
+  triGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'nowrap', // Forzar una línea
+  },
+  
+  // Items individuales
   dataItem: {
     width: '48%',
     padding: 15,
@@ -683,6 +745,23 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignItems: 'center',
   },
+  dataItemFull: {
+    width: '100%',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  dataItemThird: {
+    width: '32%', // 32% * 3 = 96%, dejando espacio para gaps
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  
   dataLabel: {
     fontSize: 14,
     marginBottom: 5,
@@ -692,6 +771,19 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+  // Estilos más pequeños para cuando hay 3 en línea
+  dataLabelSmall: {
+    fontSize: 11,
+    marginBottom: 4,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  dataValueSmall: {
+    fontSize: 15, // Reducido para que quepa
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+
   summaryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
