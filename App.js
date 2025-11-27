@@ -13,6 +13,7 @@ import PasswordRecoveryScreen from './src/screens/password_recovery_screen';
 import MLPredictionScreen from './src/screens/ml_prediction_screen'; // { added }
 import PredictionsScreen from './src/screens/predictions_screen';
 import authService from './lib/auth';
+import CFEReportScreen from './src/screens/cfe_report_screen';
 
 const Stack = createStackNavigator();
 
@@ -93,6 +94,10 @@ export default function App() {
         <Stack.Screen 
           name="EF - Dashboard de Edificio" 
           component={BuildingDashboard} 
+        />
+        <Stack.Screen 
+          name="CFEReport"
+          component={CFEReportScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

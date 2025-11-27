@@ -392,23 +392,19 @@ const BuildingDashboard = ({ route, navigation }) => {
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity
-              style={styles.mlButtonHeader}
-              onPress={() =>
-                navigation.navigate('MLPredict', {
-                  buildingId,
-                  buildingName,
-                })
-              }
-            >
-              <Text style={styles.mlButtonHeaderText}>ML</Text>
-            </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => setSettingsVisible(true)}
               style={styles.settingsButtonHeader}
             >
               <Ionicons name="settings-outline" size={24} color="white" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.reportButtonHeader}
+              onPress={() => navigation.navigate('CFEReport', { buildingId, buildingName })}
+            >
+              <Ionicons name="document-text-outline" size={24} color="white" />
             </TouchableOpacity>
             
             <TouchableOpacity 
@@ -580,6 +576,14 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  reportButtonHeader: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    padding: 6,
+    borderRadius: 20,
+    marginRight: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   // Estilo para el botón de Settings
   settingsButtonHeader: {
