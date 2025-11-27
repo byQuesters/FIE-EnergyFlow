@@ -295,7 +295,7 @@ const CampusMapScreen = ({ navigation }) => {
               style={styles.logoutButton}
               onPress={handleLogout}
             >
-              <Text style={styles.logoutButtonText}>🚪</Text>
+              <Ionicons name="log-out-outline" size={25} color="white" />
             </TouchableOpacity>
           </View>
         </View>
@@ -571,12 +571,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   settingsButtonHeader: {
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     borderRadius: 20,
-    marginRight: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    marginLeft: 6,
   },
   logoutButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',

@@ -433,7 +433,7 @@ const BuildingDashboard = ({ route, navigation }) => {
             style={[styles.backButton, { borderColor: 'rgba(255,255,255,0.4)' }]}
             onPress={handleBackToMap}
           >
-            <Text style={styles.backButtonText}>←</Text>
+            <Ionicons name="arrow-back-outline" size={22} color="#fff" />
           </TouchableOpacity>
           
           <View style={styles.headerTextContainer}>
@@ -446,6 +446,13 @@ const BuildingDashboard = ({ route, navigation }) => {
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
 
             <TouchableOpacity
+              style={styles.reportButtonHeader}
+              onPress={() => navigation.navigate('CFEReport', { buildingId, buildingName })}
+            >
+              <Ionicons name="document-text-outline" size={24} color="white" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity
               onPress={() => setSettingsVisible(true)}
               style={styles.settingsButtonHeader}
             >
@@ -453,17 +460,10 @@ const BuildingDashboard = ({ route, navigation }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.reportButtonHeader}
-              onPress={() => navigation.navigate('CFEReport', { buildingId, buildingName })}
-            >
-              <Ionicons name="document-text-outline" size={24} color="white" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
               style={styles.logoutButton}
               onPress={handleLogout}
             >
-              <Text style={styles.logoutButtonText}>🚪</Text>
+              <Ionicons name="log-out-outline" size={25} color="white" />
             </TouchableOpacity>
           </View>
         </View>
@@ -630,20 +630,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   reportButtonHeader: {
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     borderRadius: 20,
-    marginRight: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    marginLeft: 6,
   },
   settingsButtonHeader: {
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     borderRadius: 20,
-    marginRight: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    marginLeft: 6,
   },
   tabsContainer: {
     flexDirection: 'row',

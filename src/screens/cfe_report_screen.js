@@ -29,23 +29,17 @@ const CFEReportScreen = ({ route, navigation }) => {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  
   const [selectedPeriod, setSelectedPeriod] = useState('ultimos7dias');
   const [selectedTariff, setSelectedTariff] = useState('DAC'); // 'DAC' | 'GDMTO'
-  
   const [error, setError] = useState(null);
 
   useEffect(() => {
     loadReport();
-  }, [buildingId, selectedPeriod, selectedTariff]); // Se ejecuta al cambiar tarifa
+  }, [buildingId, selectedPeriod, selectedTariff]); 
 
   const toggleTariff = () => {
     const newTariff = selectedTariff === 'DAC' ? 'GDMTO' : 'DAC';
     setSelectedTariff(newTariff);
-    // Feedback visual leve
-    if (Platform.OS === 'ios') {
-        // Opcional: Haptic feedback si estuviera disponible
-    }
   };
 
   const loadReport = async () => {
@@ -59,12 +53,10 @@ const CFEReportScreen = ({ route, navigation }) => {
 
       const dateRanges = reportService.getDateRanges();
       const range = dateRanges[selectedPeriod];
-
       const maxRecords = 10000; 
       const CORRECTION_FACTOR = 1.0; 
       const USE_ACCUMULATIVE_MODE = true;
 
-      // AHORA LOS PARÁMETROS COINCIDEN CON EL SERVICIO
       const report = await reportService.generateReport(
         buildingId,
         buildingName,
@@ -72,8 +64,8 @@ const CFEReportScreen = ({ route, navigation }) => {
         range.endDate,
         maxRecords,
         CORRECTION_FACTOR,
-        USE_ACCUMULATIVE_MODE, // Penúltimo
-        selectedTariff         // Último (Tarifa)
+        USE_ACCUMULATIVE_MODE, 
+        selectedTariff         
       );
 
       if (!report.success) {
@@ -201,15 +193,15 @@ const CFEReportScreen = ({ route, navigation }) => {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <LinearGradient colors={['#007a3e', '#005f30']} style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <LinearGradient colors={colors.headerGradient} style={[styles.header, { paddingTop: insets.top + 10 }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-            <Ionicons name="arrow-back-outline" size={24} color="#fff" />
+            <Ionicons name="arrow-back-outline" size={22} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Estado de Cuenta</Text>
           <View style={{width: 40}} />
         </LinearGradient>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007a3e" />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Calculando consumo...</Text>
         </View>
       </View>
@@ -219,9 +211,9 @@ const CFEReportScreen = ({ route, navigation }) => {
   if (error || !reportData) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <LinearGradient colors={['#007a3e', '#005f30']} style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        <LinearGradient colors={colors.headerGradient} style={[styles.header, { paddingTop: insets.top + 10 }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-            <Ionicons name="arrow-back-outline" size={24} color="#fff" />
+            <Ionicons name="arrow-back-outline" size={22} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Estado de Cuenta</Text>
           <View style={{width: 40}} />
@@ -241,31 +233,28 @@ const CFEReportScreen = ({ route, navigation }) => {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
-      {/* Header */}
-      <LinearGradient colors={['#007a3e', '#005f30']} style={[styles.header, { paddingTop: insets.top + 10 }]}>
+      {/* Header Unificado */}
+      <LinearGradient colors={colors.headerGradient} style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-          <Ionicons name="arrow-back-outline" size={24} color="#fff" />
+          <Ionicons name="arrow-back-outline" size={25} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Estado de Cuenta</Text>
         
         <View style={styles.headerActions}>
-          {/* Botón Cambio de Tarifa */}
           <TouchableOpacity onPress={toggleTariff} style={styles.iconButton}>
             <Ionicons name={selectedTariff === 'DAC' ? "home-outline" : "business-outline"} size={22} color="#fff" />
           </TouchableOpacity>
           
-          {/* Botón Generar PDF */}
           <TouchableOpacity onPress={generatePDF} style={styles.iconButton} disabled={generatingPdf}>
             {generatingPdf ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Ionicons name="print-outline" size={24} color="#fff" />
+              <Ionicons name="print-outline" size={25} color="#fff" />
             )}
           </TouchableOpacity>
         </View>
       </LinearGradient>
 
-      {/* Filtros */}
       <View style={styles.periodContainer}>
         {periodOptions.map((option) => (
           <TouchableOpacity
@@ -277,11 +266,7 @@ const CFEReportScreen = ({ route, navigation }) => {
             ]}
             onPress={() => setSelectedPeriod(option.key)}
           >
-            <Text style={[
-              styles.periodText, 
-              { color: colors.textSecondary },
-              selectedPeriod === option.key && styles.periodTextActive
-            ]}>
+            <Text style={[styles.periodText, { color: colors.textSecondary }, selectedPeriod === option.key && styles.periodTextActive]}>
               {option.label}
             </Text>
           </TouchableOpacity>
@@ -290,7 +275,6 @@ const CFEReportScreen = ({ route, navigation }) => {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         
-        {/* TARJETA PRINCIPAL */}
         <View style={[styles.billCard, { backgroundColor: colors.card, borderTopColor: '#007a3e' }]}>
           <View style={styles.billHeader}>
             <View>
@@ -330,20 +314,8 @@ const CFEReportScreen = ({ route, navigation }) => {
               </Text>
             </View>
             <View style={[styles.gaugeBarBg, { backgroundColor: theme.dark ? '#374151' : '#ddd' }]}>
-              <LinearGradient
-                colors={['#2e7d32', '#fdd835', '#d32f2f']}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={styles.gaugeGradient}
-              />
-              <View 
-                style={[
-                  styles.gaugeIndicator, 
-                  { 
-                    left: `${Math.min((reportData.consumo.total / 1000) * 100, 100)}%`,
-                    backgroundColor: theme.dark ? '#fff' : '#000' 
-                  }
-                ]} 
-              />
+              <LinearGradient colors={['#2e7d32', '#fdd835', '#d32f2f']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gaugeGradient} />
+              <View style={[styles.gaugeIndicator, { left: `${Math.min((reportData.consumo.total / 1000) * 100, 100)}%`, backgroundColor: theme.dark ? '#fff' : '#000' }]} />
             </View>
             <View style={styles.gaugeLabels}>
               <Text style={styles.gaugeLabelText}>Bajo</Text>
@@ -353,7 +325,6 @@ const CFEReportScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        {/* DETALLE */}
         <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
           <Text style={styles.sectionHeader}>Detalle de la Factura</Text>
           
@@ -391,7 +362,6 @@ const CFEReportScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        {/* Datos Técnicos */}
         <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
           <Text style={styles.sectionHeader}>Información del Servicio</Text>
           <View style={styles.techRow}>
@@ -433,24 +403,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
   },
   headerActions: { flexDirection: 'row' },
-  iconButton: { padding: 8 }, 
+  // Estilo Unificado Solicitado
+  iconButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    marginLeft: 6,
+  },
   headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', flex: 1, textAlign: 'center' },
-  
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 10, fontSize: 16 },
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   errorText: { textAlign: 'center', marginBottom: 20, fontSize: 16 },
   retryButton: { backgroundColor: '#007a3e', padding: 12, borderRadius: 8 },
   retryButtonText: { color: '#fff', fontWeight: 'bold' },
-
   periodContainer: { flexDirection: 'row', justifyContent: 'center', marginVertical: 15, paddingHorizontal: 10 },
   periodTab: { paddingVertical: 6, paddingHorizontal: 16, borderRadius: 20, marginHorizontal: 5 },
   periodTabActive: { backgroundColor: '#007a3e' },
   periodText: { fontSize: 13, fontWeight: '600' },
   periodTextActive: { color: '#fff' },
-
   content: { paddingHorizontal: 15 },
-
   billCard: { borderRadius: 10, padding: 20, marginBottom: 20, elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, borderTopWidth: 6 },
   billHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   billLogo: { fontSize: 28, fontWeight: '900', letterSpacing: 1 },
@@ -460,12 +435,10 @@ const styles = StyleSheet.create({
   billTotalAmount: { fontSize: 28, fontWeight: 'bold' },
   billTotalDecimals: { fontSize: 16 },
   billCurrency: { fontSize: 12 },
-  
   billDivider: { height: 1, marginVertical: 15 },
   billInfoRow: { flexDirection: 'row', justifyContent: 'space-between' },
   billLabel: { fontSize: 12, marginBottom: 2 },
   billValue: { fontSize: 14, fontWeight: 'bold' },
-
   consumptionGauge: { marginTop: 20, padding: 10, borderRadius: 8 },
   gaugeHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   gaugeTitle: { fontSize: 12, fontWeight: 'bold' },
@@ -475,7 +448,6 @@ const styles = StyleSheet.create({
   gaugeIndicator: { position: 'absolute', top: 0, bottom: 0, width: 4, borderRadius: 2, zIndex: 2 },
   gaugeLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
   gaugeLabelText: { fontSize: 10, color: '#888' },
-
   sectionCard: { borderRadius: 10, padding: 15, marginBottom: 15, elevation: 2 },
   sectionHeader: { fontSize: 16, fontWeight: 'bold', color: '#007a3e', marginBottom: 15 },
   tableHeader: { flexDirection: 'row', padding: 8, borderRadius: 4, marginBottom: 5 },
@@ -491,7 +463,6 @@ const styles = StyleSheet.create({
   totalValueText: { fontSize: 18, fontWeight: 'bold', color: '#007a3e' },
   techRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   techText: { marginLeft: 10, fontSize: 13 },
-
   generatePdfBtn: { flexDirection: 'row', backgroundColor: '#007a3e', padding: 15, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginVertical: 10, elevation: 3 },
   generatePdfText: { color: '#fff', fontWeight: 'bold', fontSize: 16, marginLeft: 10 },
 });
