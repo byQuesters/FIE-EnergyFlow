@@ -13,11 +13,13 @@ import {
   StyleSheet,
   Modal,
   Animated,
-  Image, // ✅ AGREGADO: Importación faltante
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { Ionicons } from '@expo/vector-icons';
 import { signInWithEmail, registerUser } from '../../lib/auth';
+import SettingsModal from '../components/SettingsModal'; // ✅ Importación del Modal
 
 const LogoUcol = require("../../assets/LogoUCOL.png");
 
@@ -43,30 +45,10 @@ const CustomAlert = ({ visible, type, title, message, onClose }) => {
 
   const getAlertStyle = () => {
     switch (type) {
-      case 'success':
-        return {
-          backgroundColor: '#10b981',
-          icon: '✓',
-          iconBg: '#059669',
-        };
-      case 'error':
-        return {
-          backgroundColor: '#ef4444',
-          icon: '✕',
-          iconBg: '#dc2626',
-        };
-      case 'warning':
-        return {
-          backgroundColor: '#f59e0b',
-          icon: '⚠',
-          iconBg: '#d97706',
-        };
-      default:
-        return {
-          backgroundColor: '#3b82f6',
-          icon: 'ℹ',
-          iconBg: '#2563eb',
-        };
+      case 'success': return { backgroundColor: '#10b981', icon: '✓', iconBg: '#059669' };
+      case 'error': return { backgroundColor: '#ef4444', icon: '✕', iconBg: '#dc2626' };
+      case 'warning': return { backgroundColor: '#f59e0b', icon: '⚠', iconBg: '#d97706' };
+      default: return { backgroundColor: '#3b82f6', icon: 'ℹ', iconBg: '#2563eb' };
     }
   };
 
@@ -76,38 +58,25 @@ const CustomAlert = ({ visible, type, title, message, onClose }) => {
 
   return (
     <Modal transparent visible={visible} animationType="none">
-      <BlurView intensity={40} // Ajusta qué tan borroso se ve (0 a 100)
-        tint="dark"    // Puede ser 'light', 'dark', 'default'
-        style={styles.alertOverlay}
-      >
+      <BlurView intensity={40} tint="dark" style={styles.alertOverlay}>
         <Animated.View 
           style={[
             styles.alertContainer,
             { 
               backgroundColor: alertStyle.backgroundColor,
               opacity: fadeAnim,
-              transform: [{
-                scale: fadeAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.8, 1],
-                }),
-              }],
+              transform: [{ scale: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
             }
           ]}
         >
           <View style={[styles.alertIconContainer, { backgroundColor: alertStyle.iconBg }]}>
             <Text style={styles.alertIcon}>{alertStyle.icon}</Text>
           </View>
-          
           <View style={styles.alertContent}>
             <Text style={styles.alertTitle}>{title}</Text>
             <Text style={styles.alertMessage}>{message}</Text>
           </View>
-
-          <TouchableOpacity 
-            style={styles.alertButton}
-            onPress={onClose}
-          >
+          <TouchableOpacity style={styles.alertButton} onPress={onClose}>
             <Text style={styles.alertButtonText}>Entendido</Text>
           </TouchableOpacity>
         </Animated.View>
@@ -118,21 +87,14 @@ const CustomAlert = ({ visible, type, title, message, onClose }) => {
 
 const AuthScreen = ({ navigation }) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    name: '',
-  });
+  const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '', name: '' });
   const [loading, setLoading] = useState(false);
   
-  // Estado para alertas personalizadas
-  const [alert, setAlert] = useState({
-    visible: false,
-    type: 'info',
-    title: '',
-    message: '',
-  });
+  // ✅ Estados para Política de Privacidad
+  const [isPolicyAccepted, setIsPolicyAccepted] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
+
+  const [alert, setAlert] = useState({ visible: false, type: 'info', title: '', message: '' });
 
   const showAlert = (type, title, message) => {
     setAlert({ visible: true, type, title, message });
@@ -154,40 +116,30 @@ const AuthScreen = ({ navigation }) => {
       return false;
     }
 
-    // Validación de email - debe ser @ucol.mx
+    // ✅ Validación de Checkbox (redundante si el botón está deshabilitado, pero buena práctica)
+    if (!isPolicyAccepted) {
+      showAlert('warning', 'Aceptación Requerida', 'Debes leer y aceptar la Política de Privacidad y Uso.');
+      return false;
+    }
+
     const emailRegex = /^[^\s@]+@ucol\.mx$/;
     if (!emailRegex.test(email)) {
-      showAlert(
-        'error',
-        'Email inválido', 
-        'El correo debe ser oficial de la Universidad de Colima'
-      );
+      showAlert('error', 'Email inválido', 'El correo debe ser oficial de la Universidad de Colima (@ucol.mx)');
       return false;
     }
 
-    // Validación de contraseña - mínimo 8 caracteres
     if (password.length < 8) {
-      showAlert(
-        'warning',
-        'Contraseña débil', 
-        'La contraseña debe tener al menos 8 caracteres'
-      );
+      showAlert('warning', 'Contraseña débil', 'La contraseña debe tener al menos 8 caracteres');
       return false;
     }
 
-    // Validaciones específicas para registro
     if (!isLogin) {
       if (!name) {
         showAlert('error', 'Nombre requerido', 'Por favor ingresa tu nombre completo');
         return false;
       }
-
       if (password !== confirmPassword) {
-        showAlert(
-          'error',
-          'Contraseñas no coinciden', 
-          'Las contraseñas ingresadas no son iguales. Por favor verifica.'
-        );
+        showAlert('error', 'Contraseñas no coinciden', 'Las contraseñas ingresadas no son iguales.');
         return false;
       }
     }
@@ -197,20 +149,12 @@ const AuthScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!validateForm()) return;
-
     setLoading(true);
-    
     try {
       const { data, error } = await signInWithEmail(formData.email, formData.password);
-      
       if (error) {
-        // Mostrar alerta específica para credenciales incorrectas
         if (error.message.includes('Credenciales') || error.message.includes('inválidas')) {
-          showAlert(
-            'error',
-            'Credenciales incorrectas', 
-            'El email o la contraseña son incorrectos. Por favor verifica tus datos.'
-          );
+          showAlert('error', 'Credenciales incorrectas', 'El email o la contraseña son incorrectos.');
         } else {
           showAlert('error', 'Error de autenticación', error.message);
         }
@@ -223,11 +167,7 @@ const AuthScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Error en login:', error);
-      showAlert(
-        'error',
-        'Error de conexión', 
-        'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
-      );
+      showAlert('error', 'Error de conexión', 'No se pudo conectar con el servidor.');
     } finally {
       setLoading(false);
     }
@@ -235,33 +175,21 @@ const AuthScreen = ({ navigation }) => {
 
   const handleRegister = async () => {
     if (!validateForm()) return;
-
     setLoading(true);
-    
     try {
       const { data, error } = await registerUser({
         email: formData.email,
         password: formData.password,
         name: formData.name,
       });
-      
       if (error) {
-        // Mostrar alertas específicas según el tipo de error
-        if (error.message.includes('ya está registrado') || error.message.includes('ya existe')) {
-          showAlert(
-            'warning',
-            'Correo en uso', 
-            'Este Correo ya está registrado. Por favor inicia sesión o usa otro correo.'
-          );
+        if (error.message.includes('registrado') || error.message.includes('existe')) {
+          showAlert('warning', 'Correo en uso', 'Este correo ya está registrado.');
         } else {
           showAlert('error', 'Error de registro', error.message);
         }
       } else {
-        showAlert(
-          'success',
-          'Registro exitoso', 
-          'Tu cuenta ha sido creada exitosamente. Ahora puedes iniciar sesión.'
-        );
+        showAlert('success', 'Registro exitoso', 'Tu cuenta ha sido creada. Inicia sesión.');
         setTimeout(() => {
           setIsLogin(true);
           setFormData({ email: formData.email, password: '', confirmPassword: '', name: '' });
@@ -269,11 +197,7 @@ const AuthScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Error en registro:', error);
-      showAlert(
-        'error',
-        'Error de conexión', 
-        'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
-      );
+      showAlert('error', 'Error de conexión', 'No se pudo conectar con el servidor.');
     } finally {
       setLoading(false);
     }
@@ -282,24 +206,24 @@ const AuthScreen = ({ navigation }) => {
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setFormData({ email: '', password: '', confirmPassword: '', name: '' });
+    setIsPolicyAccepted(false); // Resetear check
   };
 
   return (
     <View style={styles.safeArea}>
-      <LinearGradient
-        colors={['#f5f5f5ff', '#f5f5f5ff', '#f5f5f5ff']}
-        style={styles.gradient}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
-          <ScrollView 
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-          >
+      <LinearGradient colors={['#f5f5f5ff', '#f5f5f5ff', '#f5f5f5ff']} style={styles.gradient}>
+        
+        {/* ✅ Modal de Políticas */}
+        <SettingsModal 
+          visible={settingsVisible}
+          onClose={() => setSettingsVisible(false)}
+          systemInfo={null}
+        />
+
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
+          <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
             <View style={styles.container}>
-              {/* Logo y título */}
+              
               <View style={styles.header}>
                 <View style={styles.logoContainer}>
                   <Image source={LogoUcol} style={styles.logo} resizeMode="contain" />
@@ -307,31 +231,17 @@ const AuthScreen = ({ navigation }) => {
                 <Text style={styles.subtitle}>Sistema de Monitoreo Energético de la FIE</Text>
               </View>
 
-              {/* Formulario Centrado */}
               <View style={styles.formCard}>
-                {/* Tabs Login/Register */}
                 <View style={styles.tabsContainer}>
-                  <TouchableOpacity
-                    onPress={() => setIsLogin(true)}
-                    style={[styles.tab, isLogin && styles.tabActive]}
-                  >
-                    <Text style={[styles.tabText, isLogin && styles.tabTextActive]}>
-                      Iniciar Sesión
-                    </Text>
+                  <TouchableOpacity onPress={() => setIsLogin(true)} style={[styles.tab, isLogin && styles.tabActive]}>
+                    <Text style={[styles.tabText, isLogin && styles.tabTextActive]}>Iniciar Sesión</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setIsLogin(false)}
-                    style={[styles.tab, !isLogin && styles.tabActive]}
-                  >
-                    <Text style={[styles.tabText, !isLogin && styles.tabTextActive]}>
-                      Registrarse
-                    </Text>
+                  <TouchableOpacity onPress={() => setIsLogin(false)} style={[styles.tab, !isLogin && styles.tabActive]}>
+                    <Text style={[styles.tabText, !isLogin && styles.tabTextActive]}>Registrarse</Text>
                   </TouchableOpacity>
                 </View>
 
-                {/* Formulario */}
                 <View style={styles.form}>
-                  {/* Campo Nombre (solo en registro) */}
                   {!isLogin && (
                     <View style={styles.inputContainer}>
                       <Text style={styles.label}>Nombre completo</Text>
@@ -346,7 +256,6 @@ const AuthScreen = ({ navigation }) => {
                     </View>
                   )}
 
-                  {/* Campo Email */}
                   <View style={styles.inputContainer}>
                     <Text style={styles.label}>Correo</Text>
                     <TextInput
@@ -361,7 +270,6 @@ const AuthScreen = ({ navigation }) => {
                     />
                   </View>
 
-                  {/* Campo Contraseña */}
                   <View style={styles.inputContainer}>
                     <Text style={styles.label}>Contraseña</Text>
                     <TextInput
@@ -374,16 +282,12 @@ const AuthScreen = ({ navigation }) => {
                       autoCapitalize="none"
                     />
                     {isLogin && (
-                      <TouchableOpacity 
-                        onPress={() => navigation.navigate('EF - Recuperar Contraseña')}
-                        style={styles.forgotPassword}
-                      >
+                      <TouchableOpacity onPress={() => navigation.navigate('EF - Recuperar Contraseña')} style={styles.forgotPassword}>
                         <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
                       </TouchableOpacity>
                     )}
                   </View>
 
-                  {/* Campo Confirmar Contraseña (solo en registro) */}
                   {!isLogin && (
                     <View style={styles.inputContainer}>
                       <Text style={styles.label}>Confirmar contraseña</Text>
@@ -399,11 +303,33 @@ const AuthScreen = ({ navigation }) => {
                     </View>
                   )}
 
-                  {/* Botón de Acción */}
+                  {/* ✅ CHECKBOX Y POLÍTICA DE PRIVACIDAD */}
+                  <View style={styles.policyContainer}>
+                    <TouchableOpacity 
+                      style={styles.checkbox} 
+                      onPress={() => setIsPolicyAccepted(!isPolicyAccepted)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons 
+                        name={isPolicyAccepted ? "checkbox" : "square-outline"} 
+                        size={24} 
+                        color={isPolicyAccepted ? "#93ab6b" : "#9ca3af"} 
+                      />
+                    </TouchableOpacity>
+                    
+                    <View style={styles.policyTextContainer}>
+                      <Text style={styles.policyTextNormal}>He leído y acepto la </Text>
+                      <TouchableOpacity onPress={() => setSettingsVisible(true)}>
+                        <Text style={styles.policyLink}>Política de Privacidad y Uso</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* ✅ BOTÓN DESACTIVADO SI NO SE ACEPTA LA POLÍTICA */}
                   <TouchableOpacity
                     onPress={isLogin ? handleLogin : handleRegister}
-                    disabled={loading}
-                    style={[styles.button, loading && styles.buttonDisabled]}
+                    disabled={loading || !isPolicyAccepted}
+                    style={[styles.button, (loading || !isPolicyAccepted) && styles.buttonDisabled]}
                   >
                     {loading ? (
                       <ActivityIndicator color="white" />
@@ -414,283 +340,73 @@ const AuthScreen = ({ navigation }) => {
                     )}
                   </TouchableOpacity>
 
-                  {/* Link para cambiar de modo */}
                   <View style={styles.footer}>
-                    <Text style={styles.footerText}>
-                      {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
-                    </Text>
+                    <Text style={styles.footerText}>{isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}</Text>
                     <TouchableOpacity onPress={toggleMode}>
-                      <Text style={styles.footerLink}>
-                        {isLogin ? 'Regístrate aquí' : 'Inicia sesión aquí'}
-                      </Text>
+                      <Text style={styles.footerLink}>{isLogin ? 'Regístrate aquí' : 'Inicia sesión aquí'}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
               </View>
               <View style={styles.footer}>
-                <Text style={{ color: '#6b7280', fontSize: 12 }}>
-                    © Derechos Reservados 2025
-                </Text>
+                <Text style={{ color: '#6b7280', fontSize: 12 }}>© Derechos Reservados 2025</Text>
               </View>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </LinearGradient>
 
-      {/* Alerta Personalizada */}
-      <CustomAlert
-        visible={alert.visible}
-        type={alert.type}
-        title={alert.title}
-        message={alert.message}
-        onClose={closeAlert}
-      />
+      <CustomAlert visible={alert.visible} type={alert.type} title={alert.title} message={alert.message} onClose={closeAlert} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  gradient: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 48,
-    color: '#1f2937',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  logoContainer: {
-    width: 120,
-    height: 120,
-    backgroundColor: '#f5f5f5ff',
-    borderRadius: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    elevation: 8,
-  },
-  logo: {
-    width: '250%',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 8,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#000000b3',
-    textAlign: 'center',
-    paddingHorizontal: 20,
-    marginTop: 0,
-    fontWeight: 'bold',
-  },
-  formCard: {
-    width: '100%',
-    maxWidth: 450,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    marginBottom: 24,
-    backgroundColor: '#e8f0e0',
-    borderRadius: 8,
-    padding: 4,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  tabActive: {
-    backgroundColor: '#93ab6b',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  tabText: {
-    textAlign: 'center',
-    fontWeight: '600',
-    fontSize: 15,
-    color: '#6b8e4a',
-  },
-  tabTextActive: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  form: {
-    width: '100%',
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  label: {
-    marginLeft: 4,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000bd',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: 'white',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 10,
-    fontSize: 16,
-    color: '#1f2937',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-  },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginTop: 8,
-  },
-  forgotPasswordText: {
-    color: '#93ab6b',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  button: {
-    backgroundColor: '#93ab6b',
-    paddingVertical: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  buttonDisabled: {
-    backgroundColor: '#a8c48e',
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
-  footer: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  footerText: {
-    color: '#6b7280',
-    marginBottom: 8,
-    fontSize: 14,
-  },
-  footerLink: {
-    color: '#93ab6b',
-    fontWeight: 'bold',
-    fontSize: 15,
-  },
-  // Estilos para Alerta Personalizada
-  alertOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    // backgroundColor: 'rgba(0, 0, 0, 0.5)', <--- ESTO SE ELIMINA O COMENTA
-  },
-  alertContainer: {
-    width: '100%',
-    maxWidth: 350,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 0,
-    },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 8,
-    borderWidth: 2,
-    borderColor: 'rgba(0, 0, 0, 1)',
+  safeArea: { flex: 1 },
+  gradient: { flex: 1 },
+  keyboardView: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 48 },
+  header: { alignItems: 'center', marginBottom: 32 },
+  logoContainer: { width: 120, height: 120, backgroundColor: '#f5f5f5ff', borderRadius: 60, justifyContent: 'center', alignItems: 'center', marginBottom: 16, elevation: 8 },
+  logo: { width: '250%' },
+  subtitle: { fontSize: 15, color: '#000000b3', textAlign: 'center', paddingHorizontal: 20, marginTop: 0, fontWeight: 'bold' },
+  formCard: { width: '100%', maxWidth: 450, backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: 20, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 10 },
+  tabsContainer: { flexDirection: 'row', marginBottom: 24, backgroundColor: '#e8f0e0', borderRadius: 8, padding: 4 },
+  tab: { flex: 1, paddingVertical: 12, borderRadius: 6, alignItems: 'center' },
+  tabActive: { backgroundColor: '#93ab6b', shadowOpacity: 0.1, elevation: 2 },
+  tabText: { fontWeight: '600', fontSize: 15, color: '#6b8e4a' },
+  tabTextActive: { color: 'white', fontWeight: 'bold' },
+  form: { width: '100%' },
+  inputContainer: { marginBottom: 16 },
+  label: { marginLeft: 4, fontSize: 16, fontWeight: '600', color: '#000000bd', marginBottom: 8 },
+  input: { backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 14, borderRadius: 10, fontSize: 16, color: '#1f2937', borderWidth: 1, borderColor: '#d1d5db' },
+  forgotPassword: { alignSelf: 'flex-end', marginTop: 8 },
+  forgotPasswordText: { color: '#93ab6b', fontSize: 13, fontWeight: '600' },
+  
+  // Estilos Checkbox corregidos (Centrado vertical)
+  policyContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 5, marginBottom: 20, paddingHorizontal: 4 },
+  checkbox: { marginRight: 10 },
+  policyTextContainer: { flex: 1, flexDirection: 'row', flexWrap: 'wrap' },
+  policyTextNormal: { fontSize: 13, color: '#6b7280', lineHeight: 20 },
+  policyLink: { fontSize: 13, color: '#93ab6b', fontWeight: 'bold', textDecorationLine: 'underline', lineHeight: 20 },
 
-  },
-  alertIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  alertIcon: {
-    fontSize: 32,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  alertContent: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  alertTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  alertMessage: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.95)',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  alertButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 25,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    minWidth: 140,
-  },
-  alertButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
+  button: { backgroundColor: '#93ab6b', paddingVertical: 16, borderRadius: 10, alignItems: 'center', marginTop: 8, elevation: 5 },
+  buttonDisabled: { backgroundColor: '#a8c48e', opacity: 0.6, elevation: 0 },
+  buttonText: { color: 'white', fontSize: 17, fontWeight: 'bold' },
+  footer: { marginTop: 24, alignItems: 'center' },
+  footerText: { color: '#6b7280', marginBottom: 8, fontSize: 14 },
+  footerLink: { color: '#93ab6b', fontWeight: 'bold', fontSize: 15 },
+  
+  alertOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  alertContainer: { width: '100%', maxWidth: 350, borderRadius: 20, padding: 24, alignItems: 'center', elevation: 8, borderWidth: 2, borderColor: 'rgba(0, 0, 0, 1)' },
+  alertIconContainer: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  alertIcon: { fontSize: 32, color: 'white', fontWeight: 'bold' },
+  alertContent: { alignItems: 'center', marginBottom: 24 },
+  alertTitle: { fontSize: 22, fontWeight: 'bold', color: 'white', marginBottom: 8, textAlign: 'center' },
+  alertMessage: { fontSize: 16, color: 'rgba(255, 255, 255, 0.95)', textAlign: 'center', lineHeight: 22 },
+  alertButton: { backgroundColor: 'rgba(255, 255, 255, 0.2)', paddingVertical: 12, paddingHorizontal: 32, borderRadius: 25, borderWidth: 2, borderColor: 'rgba(255, 255, 255, 0.3)', minWidth: 140 },
+  alertButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold', textAlign: 'center' },
 });
 
 export default AuthScreen;

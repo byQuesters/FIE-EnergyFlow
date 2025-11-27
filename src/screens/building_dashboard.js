@@ -158,6 +158,12 @@ const BuildingDashboard = ({ route, navigation }) => {
   if (!currentData) {
     return (
       <View style={[styles.container, styles.loading, { backgroundColor: colors.background }]}>
+        <TouchableOpacity 
+            style={[styles.backButton, { borderColor: 'rgba(255,255,255,0.4)' }]}
+            onPress={handleBackToMap}
+          >
+            <Ionicons name="arrow-back-outline" size={22} color="#fff" />
+        </TouchableOpacity>
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Cargando datos...</Text>
       </View>
     );

@@ -127,7 +127,7 @@ const CFEReportScreen = ({ route, navigation }) => {
           </head>
           <body>
             <div class="header">
-              <div class="logo-text">CFE</div>
+              <div class="logo-text">RERPORTE</div>
               <div style="font-size: 10px; text-align: right;">SUMINISTRADOR DE<br/>SERVICIOS BÁSICOS</div>
             </div>
             <div class="sub-header">
@@ -278,7 +278,7 @@ const CFEReportScreen = ({ route, navigation }) => {
         <View style={[styles.billCard, { backgroundColor: colors.card, borderTopColor: '#007a3e' }]}>
           <View style={styles.billHeader}>
             <View>
-              <Text style={[styles.billLogo, { color: '#007a3e' }]}>CFE</Text>
+              <Text style={[styles.billLogo, { color: '#007a3e' }]}>REPORTE</Text>
               <Text style={[styles.billSlogan, { color: colors.textSecondary }]}>Suministrador de Servicios Básicos</Text>
             </View>
             <View style={styles.billTotalContainer}>
