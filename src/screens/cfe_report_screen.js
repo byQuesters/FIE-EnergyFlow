@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Alert,
   StatusBar,
-  ActionSheetIOS,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,7 +30,6 @@ const CFEReportScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   
-  // Estados para filtros
   const [selectedPeriod, setSelectedPeriod] = useState('ultimos7dias');
   const [selectedTariff, setSelectedTariff] = useState('DAC'); // 'DAC' | 'GDMTO'
   
@@ -39,13 +37,15 @@ const CFEReportScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     loadReport();
-  }, [buildingId, selectedPeriod, selectedTariff]); // Recargar si cambia tarifa
+  }, [buildingId, selectedPeriod, selectedTariff]); // Se ejecuta al cambiar tarifa
 
   const toggleTariff = () => {
     const newTariff = selectedTariff === 'DAC' ? 'GDMTO' : 'DAC';
     setSelectedTariff(newTariff);
-    // Alert para confirmar visualmente el cambio
-    Alert.alert("Cambio de Tarifa", `Calculando con tarifa: ${newTariff === 'DAC' ? 'Doméstica Alto Consumo' : 'Comercial GDMTO'}`);
+    // Feedback visual leve
+    if (Platform.OS === 'ios') {
+        // Opcional: Haptic feedback si estuviera disponible
+    }
   };
 
   const loadReport = async () => {
@@ -60,11 +60,11 @@ const CFEReportScreen = ({ route, navigation }) => {
       const dateRanges = reportService.getDateRanges();
       const range = dateRanges[selectedPeriod];
 
-      // Configuración
       const maxRecords = 10000; 
       const CORRECTION_FACTOR = 1.0; 
       const USE_ACCUMULATIVE_MODE = true;
 
+      // AHORA LOS PARÁMETROS COINCIDEN CON EL SERVICIO
       const report = await reportService.generateReport(
         buildingId,
         buildingName,
@@ -72,8 +72,8 @@ const CFEReportScreen = ({ route, navigation }) => {
         range.endDate,
         maxRecords,
         CORRECTION_FACTOR,
-        USE_ACCUMULATIVE_MODE,
-        selectedTariff // Pasamos la tarifa seleccionada
+        USE_ACCUMULATIVE_MODE, // Penúltimo
+        selectedTariff         // Último (Tarifa)
       );
 
       if (!report.success) {
@@ -84,7 +84,7 @@ const CFEReportScreen = ({ route, navigation }) => {
           ...report,
           fechaLimitePago: new Date(new Date().setDate(new Date().getDate() + 15)).toLocaleDateString('es-MX'),
           periodoFacturado: `${formatDateShort(report.periodo.inicio)} - ${formatDateShort(report.periodo.fin)}`,
-          tarifa: report.costos.tarifaNombre, // Usamos el nombre que viene del servicio
+          tarifa: report.costos.tarifaNombre, 
           noMedidor: buildingId.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 10),
         };
         setReportData(enrichedData);
@@ -241,7 +241,7 @@ const CFEReportScreen = ({ route, navigation }) => {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
-      {/* Header con Iconos Estilo Yesicon (Ionicons Outline) */}
+      {/* Header */}
       <LinearGradient colors={['#007a3e', '#005f30']} style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
           <Ionicons name="arrow-back-outline" size={24} color="#fff" />
@@ -265,7 +265,7 @@ const CFEReportScreen = ({ route, navigation }) => {
         </View>
       </LinearGradient>
 
-      {/* Filtros de Periodo */}
+      {/* Filtros */}
       <View style={styles.periodContainer}>
         {periodOptions.map((option) => (
           <TouchableOpacity
@@ -353,7 +353,7 @@ const CFEReportScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        {/* DETALLE DEL RECIBO */}
+        {/* DETALLE */}
         <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
           <Text style={styles.sectionHeader}>Detalle de la Factura</Text>
           
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
   },
   headerActions: { flexDirection: 'row' },
-  iconButton: { padding: 8 }, // Botones más grandes y fáciles de tocar
+  iconButton: { padding: 8 }, 
   headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', flex: 1, textAlign: 'center' },
   
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },

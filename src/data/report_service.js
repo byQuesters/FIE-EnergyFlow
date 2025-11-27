@@ -6,7 +6,7 @@ const TARIFF_SCHEMES = {
     id: 'DAC',
     name: 'DAC (Doméstica Alto Consumo)',
     rates: {
-      energia: 5.65,    // Precio único alto
+      energia: 5.65,    // Precio alto por kWh
       suministro: 135.00,
       iva: 0.16,
       dap: 0.03
@@ -16,56 +16,49 @@ const TARIFF_SCHEMES = {
     id: 'GDMTO',
     name: 'GDMTO (Gran Demanda M.T.)',
     rates: {
-      energia: 2.95,    // Precio promedio comercial
-      suministro: 250.00, // Cargo fijo mayor
+      energia: 2.95,    // Precio más bajo comercial
+      suministro: 350.00, // Cargo fijo más alto
       iva: 0.16,
-      dap: 0.05 // Derecho alumbrado mayor
+      dap: 0.05
     }
   }
 };
 
 const getDateRanges = () => {
   const today = new Date();
-  
-  // Últimos 7 días
   const last7Days = new Date(today);
   last7Days.setDate(today.getDate() - 7);
-
-  // Mes Actual (1ro al día de hoy)
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  
-  // Mes Anterior (1ro al último día del mes anterior)
   const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
   const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
 
   return {
-    ultimos7dias: {
-      label: 'Últimos 7 días',
-      startDate: last7Days,
-      endDate: today
-    },
-    mesActual: {
-      label: 'Mes en curso',
-      startDate: startOfMonth,
-      endDate: today
-    },
-    mesAnterior: {
-      label: 'Mes anterior',
-      startDate: startOfLastMonth,
-      endDate: endOfLastMonth
-    }
+    ultimos7dias: { label: 'Últimos 7 días', startDate: last7Days, endDate: today },
+    mesActual: { label: 'Mes en curso', startDate: startOfMonth, endDate: today },
+    mesAnterior: { label: 'Mes anterior', startDate: startOfLastMonth, endDate: endOfLastMonth }
   };
 };
 
 /**
  * Genera el reporte financiero
- * @param {string} tariffId - ID de la tarifa ('DAC' o 'GDMTO')
+ * Firma actualizada para coincidir con la llamada de la pantalla
  */
-const generateReport = async (buildingId, buildingName, startDate, endDate, maxRecords = 1000, correctionFactor = 1.0, tariffId = 'DAC') => {
+const generateReport = async (
+  buildingId, 
+  buildingName, 
+  startDate, 
+  endDate, 
+  maxRecords = 1000, 
+  correctionFactor = 1.0, 
+  useAccumulativeMode = true, // Nuevo parámetro explícito para alinear orden
+  tariffId = 'DAC'            // Tarifa al final
+) => {
   try {
-    // Seleccionar esquema tarifario
+    // Seleccionar esquema tarifario (Fallback a DAC si tariffId no existe)
     const selectedTariff = TARIFF_SCHEMES[tariffId] || TARIFF_SCHEMES.DAC;
     const rates = selectedTariff.rates;
+
+    console.log(`💰 Calculando reporte con tarifa: ${selectedTariff.name} (${rates.energia}/kWh)`);
 
     // 1. Obtener datos
     const rawData = await fetchRecentData(buildingId, maxRecords); 
@@ -87,24 +80,33 @@ const generateReport = async (buildingId, buildingName, startDate, endDate, maxR
     const firstRecord = filteredData[0];
     const lastRecord = filteredData[filteredData.length - 1];
 
-    // 3. Cálculo de Consumo (Diferencia acumulativa)
-    const consumoA = Math.abs(lastRecord.kWhA - firstRecord.kWhA) * correctionFactor;
-    const consumoB = Math.abs(lastRecord.kWhB - firstRecord.kWhB) * correctionFactor;
-    const consumoC = Math.abs(lastRecord.kWhC - firstRecord.kWhC) * correctionFactor;
+    // 3. Cálculo de Consumo
+    let consumoA, consumoB, consumoC;
+
+    if (useAccumulativeMode) {
+      // Diferencia entre última y primera lectura (Medidores acumulativos)
+      consumoA = Math.abs(lastRecord.kWhA - firstRecord.kWhA) * correctionFactor;
+      consumoB = Math.abs(lastRecord.kWhB - firstRecord.kWhB) * correctionFactor;
+      consumoC = Math.abs(lastRecord.kWhC - firstRecord.kWhC) * correctionFactor;
+    } else {
+      // Suma de lecturas instantáneas (si fuera consumo por intervalo)
+      consumoA = filteredData.reduce((acc, r) => acc + (r.kWhA || 0), 0) * correctionFactor;
+      consumoB = filteredData.reduce((acc, r) => acc + (r.kWhB || 0), 0) * correctionFactor;
+      consumoC = filteredData.reduce((acc, r) => acc + (r.kWhC || 0), 0) * correctionFactor;
+    }
     
     const totalConsumo = consumoA + consumoB + consumoC;
 
     // 4. Cálculo de Promedios
     const avgVal = (key) => filteredData.reduce((sum, r) => sum + (r[key] || 0), 0) / filteredData.length;
 
-    // 5. Cálculos Monetarios (Según Tarifa Seleccionada)
+    // 5. Cálculos Monetarios Dinámicos
     const costoEnergia = totalConsumo * rates.energia;
     const subtotal = costoEnergia + rates.suministro; 
     const iva = subtotal * rates.iva;
     const dacCost = subtotal * rates.dap;
     const totalPagar = subtotal + iva + dacCost;
 
-    // 6. Retornar estructura
     return {
       success: true,
       buildingName,
@@ -158,5 +160,5 @@ const generateReport = async (buildingId, buildingName, startDate, endDate, maxR
 export default {
   getDateRanges,
   generateReport,
-  TARIFF_SCHEMES // Exportamos para uso en UI
+  TARIFF_SCHEMES
 };
