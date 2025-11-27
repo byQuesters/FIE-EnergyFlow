@@ -11,27 +11,30 @@ import {
   Platform,
   Animated,
   PanResponder,
+  StatusBar,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { fetchLatestData } from "../data/energy_data";
-import { authService } from "../../lib/auth";
 import { ImageBackground } from "react-native";
 import Svg, { Polygon, Text as SvgText } from "react-native-svg";
+import { Ionicons } from "@expo/vector-icons"; // Importar iconos
+
+import { fetchLatestData } from "../data/energy_data";
+import { authService } from "../../lib/auth";
+import { useTheme } from "../contexts/ThemeContext"; // Importar Tema
+import SettingsModal from "../components/SettingsModal"; // Importar Modal
+
 const mapImage = require("../../assets/MapConcept2.png");
 const { width } = Dimensions.get("window");
 
-// Tamaño del PNG usado para el panning, si la reslución del PNG cambia, tambíen debe cambiarse aquí
+// Tamaño del PNG original
 const MAP_WIDTH = 1450;  
 const MAP_HEIGHT = 712;
-/* Configuración de edificios del campus (un sensor = un edificio)
-   name: etiqueta visible completa en tarjetas
-   code: etiqueta corta usada sobre el edificio (A1, LSE, etc.)
-   position: coordenadas relativas dentro del contenedor del mapa (px) 
-*/
+
+/* Configuración de edificios */
 const campusBuildingsConfig = [
   {
-    id: "AULA1", name: "Edificio Principal (A1)",code: "A1", position: { x: 621, y: 368   }, shape: "hex", size: { w: 174, h: 154 },
+    id: "AULA1", name: "Edificio Principal (A1)",code: "A1", position: { x: 621, y: 368 }, shape: "hex", size: { w: 174, h: 154 },
   },
   {
     id: 1, name: "Aulas (A2)",code: "A2", position: { x: 908, y: 390}, size: { w: 200, h: 75 },
@@ -71,18 +74,20 @@ const CampusMapScreen = ({ navigation }) => {
   const [buildingsData, setBuildingsData] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(new Date());
-  const insets = useSafeAreaInsets();
+  const [settingsVisible, setSettingsVisible] = useState(false); // Estado para el modal
 
-  // Panning state for map navigation
+  const insets = useSafeAreaInsets();
+  
+  // Hooks del Tema
+  const { theme } = useTheme();
+  const { colors } = theme;
+
+  // Panning state
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const lastOffset = useRef({ x: 0, y: 0 });
   const [containerSize, setContainerSize] = useState({ w: width - 40, h: 620 });
   const containerSizeRef = useRef(containerSize);
 
-  // scale state: how much the original PNG is scaled to fit container width
-  // Compute initial scale so the scaled map covers the container
-  // in at least one dimension (width or height) to avoid it
-  // becoming extremely small on narrow screens.
   const initialScale = Math.max(
     (containerSize.w || (width - 40)) / MAP_WIDTH,
     (containerSize.h || 620) / MAP_HEIGHT,
@@ -94,7 +99,6 @@ const CampusMapScreen = ({ navigation }) => {
 
   const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
 
-  // Center the map inside the container (used by the compass button)
   const centerMap = () => {
     const cs = containerSizeRef.current;
     const ss = scaledSizeRef.current;
@@ -116,7 +120,6 @@ const CampusMapScreen = ({ navigation }) => {
         pan.setValue({ x: 0, y: 0 });
       },
       onPanResponderMove: (e, gesture) => {
-        // compute clamped absolute position using scaled dimensions
         let newX = lastOffset.current.x + gesture.dx;
         let newY = lastOffset.current.y + gesture.dy;
         const cs = containerSizeRef.current;
@@ -127,7 +130,6 @@ const CampusMapScreen = ({ navigation }) => {
         const maxY = 0;
         newX = clamp(newX, minX, maxX);
         newY = clamp(newY, minY, maxY);
-        // set relative values (because offset is set)
         pan.x.setValue(newX - lastOffset.current.x);
         pan.y.setValue(newY - lastOffset.current.y);
       },
@@ -150,25 +152,19 @@ const CampusMapScreen = ({ navigation }) => {
     }),
   ).current;
 
-  // Verificar sesión al cargar el componente
   useEffect(() => {
     const checkAuth = async () => {
       const isAuth = await authService.isUserAuthenticated();
       if (!isAuth) {
-        // Si no hay sesión, redirigir al login
         navigation.replace("EF - Autenticación");
       }
     };
     checkAuth();
   }, [navigation]);
 
-  // Función para cerrar sesión
   const handleLogout = async () => {
-    // Usar confirm nativo de JavaScript para compatibilidad con web
     if (Platform.OS === "web") {
-      const confirmed = window.confirm(
-        "¿Estás seguro de que quieres cerrar sesión?",
-      );
+      const confirmed = window.confirm("¿Estás seguro de que quieres cerrar sesión?");
       if (confirmed) {
         await authService.logout();
         navigation.replace("EF - Autenticación");
@@ -178,10 +174,7 @@ const CampusMapScreen = ({ navigation }) => {
         "Cerrar Sesión",
         "¿Estás seguro de que quieres cerrar sesión?",
         [
-          {
-            text: "Cancelar",
-            style: "cancel",
-          },
+          { text: "Cancelar", style: "cancel" },
           {
             text: "Cerrar Sesión",
             style: "destructive",
@@ -195,7 +188,6 @@ const CampusMapScreen = ({ navigation }) => {
     }
   };
 
-  // Función para actualizar datos de todos los edificios (SIN CAMBIOS)
   const updateBuildingsData = async () => {
     const updatedBuildings = await Promise.all(
       campusBuildingsConfig.map(async (building) => {
@@ -213,7 +205,6 @@ const CampusMapScreen = ({ navigation }) => {
     setLastUpdate(new Date());
   };
 
-  // Actualizar datos cada 10 segundos (SIN CAMBIOS)
   useEffect(() => {
     updateBuildingsData();
     const interval = setInterval(updateBuildingsData, 10000);
@@ -235,42 +226,23 @@ const CampusMapScreen = ({ navigation }) => {
     });
   };
 
-  // Info del sistema (SIN CAMBIOS)
-  const showSystemInfo = () => {
-    Alert.alert(
-      "Sistema de Monitoreo Energético",
-      `Panel de Administración\n\nMonitoreando ${buildingsData.length} edificios\nConsumo total: ${getTotalConsumption()} kWh\nÚltima actualización: ${lastUpdate.toLocaleString()}`,
-      [{ text: "OK" }],
-    );
-  };
-
   const getStatusColor = (status) => {
     switch (status) {
-      case "low":
-        return "#3b82f6";
-      case "normal":
-        return "#10b981";
-      case "high":
-        return "#f59e0b";
-      case "critical":
-        return "#ef4444";
-      default:
-        return "#6b7280";
+      case "low": return "#3b82f6";
+      case "normal": return "#10b981";
+      case "high": return "#f59e0b";
+      case "critical": return "#ef4444";
+      default: return "#6b7280";
     }
   };
 
   const getStatusText = (status) => {
     switch (status) {
-      case "low":
-        return "Bajo";
-      case "normal":
-        return "Normal";
-      case "high":
-        return "Alto";
-      case "critical":
-        return "Crítico";
-      default:
-        return "Desconocido";
+      case "low": return "Bajo";
+      case "normal": return "Normal";
+      case "high": return "Alto";
+      case "critical": return "Crítico";
+      default: return "Desconocido";
     }
   };
 
@@ -283,9 +255,25 @@ const CampusMapScreen = ({ navigation }) => {
   /* ------------------------------- RENDER -------------------------------- */
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <LinearGradient colors={["#93ab6bff", "#b7c586ff"]} style={styles.header}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+
+      {/* Modal de Configuración */}
+      <SettingsModal 
+        visible={settingsVisible}
+        onClose={() => setSettingsVisible(false)}
+        systemInfo={{
+          buildingCount: buildingsData.length,
+          totalConsumption: getTotalConsumption(),
+          lastUpdate: lastUpdate.toLocaleString()
+        }}
+      />
+
+      {/* Header con Gradiente Dinámico */}
+      <LinearGradient 
+        colors={colors.headerGradient} 
+        style={[styles.header, { paddingTop: insets.top + 20 }]}
+      >
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>ENERGY FLOW</Text>
@@ -294,12 +282,15 @@ const CampusMapScreen = ({ navigation }) => {
             </Text>
           </View>
           <View style={styles.headerRight}>
+            
+            {/* Botones de acción del Header */}
             <TouchableOpacity
-              onPress={showSystemInfo}
-              style={styles.infoButton}
+              onPress={() => setSettingsVisible(true)}
+              style={styles.settingsButtonHeader}
             >
-              <Text style={styles.infoText}>i</Text>
+              <Ionicons name="settings-outline" size={24} color="white" />
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.logoutButton}
               onPress={handleLogout}
@@ -312,47 +303,41 @@ const CampusMapScreen = ({ navigation }) => {
 
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
-        style={styles.content}
+        style={[styles.content, { backgroundColor: colors.background }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#3b82f6"]}
-            tintColor={"#3b82f6"}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
           />
         }
       >
-        {/* Resumen (SIN CAMBIOS de funcionalidad) */}
-        <View style={styles.summaryContainer}>
-          <Text style={styles.summaryTitle}>Consumo Total del Campus</Text>
-          <Text style={styles.summaryValue}>{getTotalConsumption()} kWh</Text>
-          <Text style={styles.summarySubtitle}>
+        {/* Resumen */}
+        <View style={[styles.summaryContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.summaryTitle, { color: colors.text }]}>Consumo Total del Campus</Text>
+          <Text style={[styles.summaryValue, { color: colors.primary }]}>{getTotalConsumption()} kWh</Text>
+          <Text style={[styles.summarySubtitle, { color: colors.textSecondary }]}>
             {buildingsData.length} edificios monitoreados
           </Text>
         </View>
 
-        {/* Mapa FIE (solo estilos/posiciones) */}
-        <View style={styles.mapContainer}>
-          <Text style={styles.mapTitle}>Mapa del Campus</Text>
+        {/* Mapa Interactivo */}
+        <View style={[styles.mapContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.mapTitle, { color: colors.text }]}>Mapa del Campus</Text>
 
-            {/* 🔵 MAPA PNG INTERACTIVO (reemplaza GOOGLE MAPS) */}
             <View
               style={[styles.mapBox, { height: containerSize.h }]}
               onLayout={(e) => {
                 const newSize = { w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height };
                 setContainerSize(newSize);
                 containerSizeRef.current = newSize;
-                // compute scale so scaled map covers the container in
-                // both dimensions (choose the larger ratio). This
-                // prevents the image from shrinking excessively on
-                // narrow screens and avoids white-space when panning.
                 const s = Math.max(newSize.w / MAP_WIDTH, newSize.h / MAP_HEIGHT);
                 setScale(s);
                 scaleRef.current = s;
                 const ss = { w: MAP_WIDTH * s, h: MAP_HEIGHT * s };
                 setScaledSize(ss);
                 scaledSizeRef.current = ss;
-                // ensure pan offsets stay clamped to new sizes
                 const minX = Math.min(0, newSize.w - ss.w);
                 const minY = Math.min(0, newSize.h - ss.h);
                 lastOffset.current.x = clamp(lastOffset.current.x, minX, 0);
@@ -375,16 +360,15 @@ const CampusMapScreen = ({ navigation }) => {
                     style={{ width: scaledSize.w, height: scaledSize.h }}
                     imageStyle={{ resizeMode: "cover" }}
                   >
-                    {/* 🔵 Hotspots interactivos encima del PNG (se mueven con la imagen) */}
+                    {/* Hotspots */}
                     {(buildingsData.length ? buildingsData : campusBuildingsConfig).map((b) => {
                       const pos = b.position || { x: 0, y: 0 };
-                      const size = b.size || { w: 80, h: 40 }; // ajustable
+                      const size = b.size || { w: 80, h: 40 };
                       const posX = pos.x * scale;
                       const posY = pos.y * scale;
                       const w = size.w * scale;
                       const h = size.h * scale;
 
-                      // Forma del edifico A1 hexagonal
                       if (b.shape === "hex") {
                         const points = `${w * 0.25},0 ${w * 0.75},0 ${w},${h * 0.5} ${w * 0.75},${h} ${w * 0.25},${h} 0,${h * 0.5}`;
                         return (
@@ -396,23 +380,17 @@ const CampusMapScreen = ({ navigation }) => {
                               top: posY,
                               width: w,
                               height: h,
-                              ...(Platform.OS === "web" ? { cursor: "pointer", userSelect: "none", WebkitUserSelect: "none", MozUserSelect: "none" } : {}),
+                              ...(Platform.OS === "web" ? { cursor: "pointer", userSelect: "none" } : {}),
                             }}
                             viewBox={`0 0 ${w} ${h}`}
                           >
                             <Polygon
                               points={points}
-                              fill="#6b7280"
+                              fill={theme.dark ? "#4b5563" : "#6b7280"} // Color dinámico
                               opacity={0.35}
-                              stroke="#000"
+                              stroke={theme.dark ? "#9ca3af" : "#000"}
                               strokeWidth={2}
-                              onPress={() =>
-                                navigation.navigate("EF - Dashboard de Edificio", {
-                                  buildingId: b.id,
-                                  buildingName: b.name,
-                                  buildingData: b,
-                                })
-                              }
+                              onPress={() => handleBuildingPress(b)}
                             />
                             <SvgText
                               x={w / 2}
@@ -422,7 +400,6 @@ const CampusMapScreen = ({ navigation }) => {
                               fontWeight="800"
                               fontSize={14 * scale}
                               textAnchor="middle"
-                              // prevent the SVG text from capturing pointer events/selection
                               pointerEvents="none"
                             >
                               {b.code}
@@ -432,7 +409,7 @@ const CampusMapScreen = ({ navigation }) => {
                               y={h / 2 + 12}
                               fill="#e2e8f0"
                               fontFamily="Arial"
-                              fontWeight={600}
+                              fontWeight="600"
                               fontSize={10 * scale}
                               textAnchor="middle"
                               pointerEvents="none"
@@ -446,13 +423,7 @@ const CampusMapScreen = ({ navigation }) => {
                       return (
                         <TouchableOpacity
                           key={b.id}
-                          onPress={() =>
-                            navigation.navigate("EF - Dashboard de Edificio", {
-                              buildingId: b.id,
-                              buildingName: b.name,
-                              buildingData: b,
-                            })
-                          }
+                          onPress={() => handleBuildingPress(b)}
                           activeOpacity={0.85}
                           style={{
                             position: "absolute",
@@ -463,9 +434,9 @@ const CampusMapScreen = ({ navigation }) => {
                             justifyContent: "center",
                             alignItems: "center",
                             borderRadius: 6,
-                            backgroundColor: `${b.color || "#6b7280"}55`,
+                            backgroundColor: `${b.color || (theme.dark ? "#4b5563" : "#6b7280")}55`,
                             borderWidth: 2,
-                            borderColor: "#00000055",
+                            borderColor: theme.dark ? "#ffffff55" : "#00000055",
                           }}
                         >
                           <Text style={{ fontWeight: "800", color: "#fff", fontSize: 14 * scale }}>
@@ -488,49 +459,44 @@ const CampusMapScreen = ({ navigation }) => {
                 </Animated.View>
               </View>
 
-              {/* Compass / Rosa de los vientos (overlay, no se mueve con el mapa) */}
               <TouchableOpacity
                 activeOpacity={0.9}
                 onPress={centerMap}
-                style={styles.compassContainer}
+                style={[styles.compassContainer, { backgroundColor: theme.dark ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255,255,255,0.95)' }]}
               >
                 <Svg width="100%" height="100%" viewBox="0 0 100 100">
-                  <Polygon
-                    points="50,8 60,50 50,42 40,50"
-                    fill="#ef4444"
-                    opacity={0.95}
-                  />
-                  <Polygon
-                    points="50,92 40,50 50,58 60,50"
-                    fill="#374151"
-                    opacity={0.9}
-                  />
-                  <SvgText x="50" y="18" textAnchor="middle" fontWeight="800" fontSize="12" fill="#111">N</SvgText>
-                  <SvgText x="84" y="52" textAnchor="middle" fontWeight="700" fontSize="12" fill="#111">E</SvgText>
-                  <SvgText x="50" y="88" textAnchor="middle" fontWeight="700" fontSize="12" fill="#111">S</SvgText>
-                  <SvgText x="16" y="52" textAnchor="middle" fontWeight="700" fontSize="12" fill="#111">W</SvgText>
+                  <Polygon points="50,8 60,50 50,42 40,50" fill="#ef4444" opacity={0.95} />
+                  <Polygon points="50,92 40,50 50,58 60,50" fill={theme.dark ? "#9ca3af" : "#374151"} opacity={0.9} />
+                  <SvgText x="50" y="18" textAnchor="middle" fontWeight="800" fontSize="12" fill={theme.dark ? "#fff" : "#111"}>N</SvgText>
+                  <SvgText x="84" y="52" textAnchor="middle" fontWeight="700" fontSize="12" fill={theme.dark ? "#fff" : "#111"}>E</SvgText>
+                  <SvgText x="50" y="88" textAnchor="middle" fontWeight="700" fontSize="12" fill={theme.dark ? "#fff" : "#111"}>S</SvgText>
+                  <SvgText x="16" y="52" textAnchor="middle" fontWeight="700" fontSize="12" fill={theme.dark ? "#fff" : "#111"}>W</SvgText>
                 </Svg>
               </TouchableOpacity>
             </View>
 
         </View>
 
-        {/* Lista de edificios (SIN CAMBIOS de funcionalidad) */}
-        <View style={styles.buildingsListContainer}>
-          <Text style={styles.buildingsListTitle}>Edificios del Campus</Text>
+        {/* Lista de edificios con Colores Dinámicos */}
+        <View style={[styles.buildingsListContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.buildingsListTitle, { color: colors.text }]}>Edificios del Campus</Text>
+          
           {buildingsData.map((building) => (
             <TouchableOpacity
               key={building.id}
-              style={styles.buildingCard}
+              style={[styles.buildingCard, { 
+                backgroundColor: theme.dark ? colors.background : '#f8fafc', 
+                borderColor: colors.border 
+              }]}
               onPress={() => handleBuildingPress(building)}
             >
               <View style={styles.buildingCardContent}>
                 <View style={styles.buildingCardLeft}>
-                  <Text style={styles.buildingCardName}>{building.name}</Text>
-                  <Text style={styles.buildingCardConsumption}>
+                  <Text style={[styles.buildingCardName, { color: colors.text }]}>{building.name}</Text>
+                  <Text style={[styles.buildingCardConsumption, { color: colors.textSecondary }]}>
                     {building.consumption} kWh
                   </Text>
-                  <Text style={styles.buildingCardTime}>
+                  <Text style={[styles.buildingCardTime, { color: colors.textSecondary }]}>
                     Actualizado:{" "}
                     {new Date(
                       building.realTimeData?.timestamp || Date.now(),
@@ -558,7 +524,6 @@ const CampusMapScreen = ({ navigation }) => {
           ))}
         </View>
 
-        {/* Padding inferior para barra de gestos */}
         <View style={{ height: insets.bottom || 20 }} />
       </ScrollView>
     </View>
@@ -570,10 +535,9 @@ const CampusMapScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#93ab6bff",
     ...(Platform.OS === "web" && { minHeight: "100vh" }),
   },
-  header: { paddingTop: 20, paddingBottom: 15 },
+  header: { paddingBottom: 15 },
   headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -593,35 +557,46 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  infoButton: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
+  /* Botones Header Actualizados */
+  mlButtonHeader: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    marginRight: 6,
   },
-  infoText: { fontSize: 20, color: "white" },
-  logoutButton: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    width: 40,
-    height: 40,
+  mlButtonHeaderText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  settingsButtonHeader: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    padding: 6,
     borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
+    marginRight: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.4)",
-    marginLeft: 10,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    marginLeft: 6,
   },
   logoutButtonText: {
-    fontSize: 20,
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 
-  content: { flex: 1, backgroundColor: "#f8fafcee" },
+  content: { flex: 1 },
 
   /* Tarjeta resumen */
   summaryContainer: {
-    backgroundColor: "white",
     margin: 20,
     padding: 20,
     borderRadius: 12,
@@ -632,25 +607,21 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
     borderWidth: 1,
-    borderColor: "#ab70c133",
   },
   summaryTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#374151",
     marginBottom: 10,
   },
   summaryValue: { fontSize: 32, fontWeight: "bold", color: "#ab70c1ff" },
   summarySubtitle: {
     fontSize: 14,
-    color: "#6b7280",
     marginTop: 5,
     fontWeight: "bold",
   },
 
   /* Contenedor del mapa */
   mapContainer: {
-    backgroundColor: "white",
     margin: 20,
     marginTop: 0,
     borderRadius: 12,
@@ -661,12 +632,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     borderWidth: 1,
-    borderColor: "#00000030",
   },
   mapTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#374151",
     marginBottom: 15,
     textAlign: "center",
   },
@@ -682,7 +651,6 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "rgba(255,255,255,0.95)",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
@@ -710,7 +678,6 @@ const styles = StyleSheet.create({
 
   /* Lista inferior */
   buildingsListContainer: {
-    backgroundColor: "white",
     margin: 20,
     marginTop: 0,
     borderRadius: 12,
@@ -721,21 +688,17 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     borderWidth: 1,
-    borderColor: "#00000030",
   },
   buildingsListTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#374151",
     marginBottom: 15,
   },
   buildingCard: {
-    backgroundColor: "#f8fafc",
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#00000030",
   },
   buildingCardContent: {
     flexDirection: "row",
@@ -746,17 +709,14 @@ const styles = StyleSheet.create({
   buildingCardName: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#374151",
     marginBottom: 4,
   },
   buildingCardConsumption: {
     fontSize: 14,
-    color: "#6b7280",
     fontWeight: "bold",
   },
   buildingCardTime: {
     fontSize: 12,
-    color: "#9ca3af",
     marginTop: 4,
     fontWeight: "bold",
   },

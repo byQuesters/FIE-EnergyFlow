@@ -19,6 +19,10 @@ const lightTheme = {
     
     // Mapa
     mapBackground: ['#dff0c7', '#cfe6ae', '#e6f5d2'],
+
+    // Gráficas (AGREGADOS)
+    chartBackground: '#ffffff',
+    chartLine: '#3b82f6',
   }
 };
 
@@ -40,6 +44,10 @@ const darkTheme = {
     
     // Mapa Nocturno
     mapBackground: ['#064e3b', '#065f46', '#047857'],
+
+    // Gráficas (AGREGADOS)
+    chartBackground: '#1f2937',
+    chartLine: '#60a5fa',
   }
 };
 
